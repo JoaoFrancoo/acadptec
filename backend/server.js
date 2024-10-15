@@ -23,6 +23,14 @@ app.get('/users', (req,res)=>{
         return res.json(data);
     })
 })
-app.listen(8081, ()=>{
+
+app.get('/inscricoes', (req,res)=>{
+    const sql = "SELECT * FROM inscricoes";
+    db.query(sql, (err, data)=>{
+        if(err) return res.json(err);
+        return res.json(data);
+    })
+})
+app.listen(8083, ()=>{
     console.log("listening")
 }); 
