@@ -5,6 +5,7 @@ import Login from './pages/login';
 import Register from './pages/register';
 import Organizadores from './pages/organizadores'
 import Navbar from './components/Navbar';
+import Footer from './components/footer'
 function App() {
   return (
     <Router>
@@ -15,7 +16,9 @@ function App() {
         <Route path="/register" element={< Register/>}/>
         <Route path="/organizadores" element={<Organizadores/>}/>
         </Routes>
+        <Footer />
     </Router>
+    
   )
 }
 
