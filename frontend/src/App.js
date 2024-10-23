@@ -16,7 +16,6 @@ function App() {
         <Route path="/register" element={< Register/>}/>
         <Route path="/organizadores" element={<Organizadores/>}/>
         </Routes>
-        <Footer />
     </Router>
     
   )

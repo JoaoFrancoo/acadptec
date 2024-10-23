@@ -1,39 +1,62 @@
-import React from 'react';
+import React, { useState } from 'react';
+import axios from 'axios';
 
-function Login(){
-    return(
-        <div className="h-screen flex items-center justify-center bg-gray-100">
-        <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
-          <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">Login</h2>
-          <form className="space-y-4">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
-              <input
-                type="email"
-                id="email"
-                className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Enter your email"
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
-              <input
-                type="password"
-                id="password"
-                className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Enter your password"
-              />
-            </div>
-            <button
-              type="submit"
-              className="w-full py-2 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-            >
-              Login
-            </button>
-          </form>
-        </div>
-      </div>
-    );
-  }
+const Login = () => {
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
 
-  export default Login;
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      const response = await axios.post('http://localhost:5000/api/auth/login', formData); // Substitua a URL pelo seu endpoint
+      const { token } = response.data;
+      
+      // Armazenar o token JWT no localStorage
+      localStorage.setItem('token', token);
+      
+      alert('Login bem-sucedido!');
+      setFormData({ email: '', password: '' }); // Limpa o formulário após o login
+    } catch (error) {
+      console.error(error.response.data.message);
+      alert('Erro ao fazer login. Verifique suas credenciais.');
+    }
+  };
+
+  return (
+    <div>
+      <h2>Login</h2>
+      <form onSubmit={handleSubmit}>
+        <input 
+          type="email" 
+          name="email" 
+          placeholder="Email" 
+          value={formData.email} 
+          onChange={handleChange} 
+          required 
+        />
+        <input 
+          type="password" 
+          name="password" 
+          placeholder="Senha" 
+          value={formData.password} 
+          onChange={handleChange} 
+          required 
+        />
+        <button type="submit">Entrar</button>
+      </form>
+    </div>
+  );
+};
+
+export default Login;
