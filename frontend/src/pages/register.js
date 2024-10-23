@@ -20,23 +20,19 @@ const Register = () => {
     e.preventDefault();
 
     try {
-      // Enviar dados para a API de registro
       const response = await axios.post('http://localhost:8081/register', formData);
-      console.log('Resposta do servidor:', response); // Verifique a resposta completa
+      console.log('Resposta do servidor:', response);
 
-      alert(response.data.message); // Exibe a mensagem retornada pela API
-      setFormData({ email: '', nome: '', password: '' }); // Limpar o formulário após o registro bem-sucedido
+      alert(response.data.message);
+      setFormData({ email: '', nome: '', password: '' });
     } catch (error) {
       if (error.response) {
-        // Erro relacionado à resposta do servidor
         console.error('Erro do servidor:', error.response.data);
         alert(`Erro: ${error.response.data.message || 'Erro ao registrar. Verifique os dados fornecidos.'}`);
       } else if (error.request) {
-        // Sem resposta do servidor
         console.error('Nenhuma resposta recebida:', error.request);
         alert('Erro: Nenhuma resposta do servidor. Verifique sua conexão.');
       } else {
-        // Outro erro (problemas com o código, por exemplo)
         console.error('Erro desconhecido:', error.message);
         alert(`Erro desconhecido: ${error.message}`);
       }
@@ -47,30 +43,9 @@ const Register = () => {
     <div>
       <h2>Cadastro</h2>
       <form onSubmit={handleSubmit}>
-        <input 
-          type="email" 
-          name="email" 
-          placeholder="Email" 
-          value={formData.email} 
-          onChange={handleChange} 
-          required 
-        />
-        <input 
-          type="text" 
-          name="nome" 
-          placeholder="Nome" 
-          value={formData.nome} 
-          onChange={handleChange} 
-          required 
-        />
-        <input 
-          type="password" 
-          name="password" 
-          placeholder="Senha" 
-          value={formData.password} 
-          onChange={handleChange} 
-          required 
-        />
+        <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} required />
+        <input  type="text"  name="nome" placeholder="Nome" value={formData.nome}  onChange={handleChange} required  />
+        <input  type="password"  name="password"  placeholder="Senha"  value={formData.password} onChange={handleChange} required />
         <button type="submit">Cadastrar</button>
       </form>
     </div>

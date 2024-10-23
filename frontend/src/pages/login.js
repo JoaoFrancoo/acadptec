@@ -24,13 +24,7 @@ const Login = () => {
 
     try {
       const response = await axios.post('http://localhost:8081/login', formData);
-
-      // Sucesso: Mostra a mensagem de sucesso
       setSuccessMessage(response.data.message);
-
-      // Aqui você pode armazenar o token (se estiver usando JWT) ou redirecionar o usuário
-      // localStorage.setItem('token', response.data.token); // Exemplo com JWT token
-      // window.location.href = '/dashboard'; // Exemplo de redirecionamento
     } catch (error) {
       if (error.response) {
         setErrorMessage(error.response.data.message || 'Erro ao fazer login.');
@@ -51,34 +45,19 @@ const Login = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
-            <input
-              type="email"
-              name="email"
-              placeholder="Email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              className="w-full mt-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <input type="email"name="email" placeholder="Email" value={formData.email}  onChange={handleChange} required
+              className="w-full mt-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
           
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700">Senha</label>
-            <input
-              type="password"
-              name="password"
-              placeholder="Senha"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              className="w-full mt-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <input  type="password"  name="password"  placeholder="Senha"  value={formData.password}  onChange={handleChange}  required
+              className="w-full mt-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
 
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors"
-          >
+            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors">
             Entrar
           </button>
         </form>
