@@ -5,11 +5,10 @@
 - **JWT**: Sistema de autenticação para segurança.
 - **PhpMyAdmin**: Banco de dados MySQL para armazenamento de dados.
 - **Cors**: Permite que recursos de uma origem sejam acessados por páginas de outra origem.
-- **Swagger**: Ferramenta para documentação da API.
 
 ## 🎨 Frontend
 - **React.js**: Biblioteca para criar interfaces interativas.
-- **Redux**: Gerenciamento de estado global da aplicação.
+- **Redux**: Gerenciamento de estado global da aplicação.(?)
 - **Axios**: Para requisições HTTP de forma simples.
 - **Material-UI**: Biblioteca de componentes prontos para estilização.
 
