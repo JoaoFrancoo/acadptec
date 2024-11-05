@@ -1,14 +1,17 @@
-Backend
-[Node.js/Express] (ou outra tecnologia backend)
-[JWT] para autenticação
-[MongoDB] (ou outro banco de dados) para armazenamento
-[Mongoose] para modelagem de dados
-[Swagger] para documentação da API
-Frontend
-[React.js] (ou outra tecnologia frontend)
-[Redux] para gerenciamento de estado
-[Axios] para fazer requisições HTTP
-[Material-UI] para estilização
-Base de Dados
-[MongoDB] (ou outro banco de dados)
-[Mongoose] para interação com o banco de dados no backend
+# Stack Tecnológica
+
+## 🌐 Backend
+- **Node.js/Express**: Framework para construir APIs robustas.
+- **JWT**: Sistema de autenticação para segurança.
+- **PhpMyAdmin**: Banco de dados MySQL para armazenamento de dados.
+- **Cors**: Permite que recursos de uma origem sejam acessados por páginas de outra origem.
+
+## 🎨 Frontend
+- **React.js**: Biblioteca para criar interfaces interativas.
+- **Redux**: Gerenciamento de estado global da aplicação.(?)
+- **Axios**: Para requisições HTTP de forma simples.
+- **Material-UI**: Biblioteca de componentes prontos para estilização.
+
+## 📊 Base de Dados
+- **Xampp**: Pacote de servidores.
+- **PhpMyAdmin**: Administração do MySQL e MariaDB.
