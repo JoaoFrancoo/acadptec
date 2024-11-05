@@ -6,6 +6,7 @@ import Register from './pages/register';
 import Organizadores from './pages/organizadores'
 import Navbar from './components/Navbar';
 import Footer from './components/footer'
+import Patrocinadores from './pages/patrocinadores';
 function App() {
   return (
     <Router>
@@ -15,6 +16,7 @@ function App() {
         <Route path="/login" element={< Login/>}/>
         <Route path="/register" element={< Register/>}/>
         <Route path="/organizadores" element={<Organizadores/>}/>
+        <Route path="/patrocinadores" element={<Patrocinadores/>}/>
         </Routes>
     </Router>
     
