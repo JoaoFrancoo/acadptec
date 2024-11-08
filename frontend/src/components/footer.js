@@ -49,9 +49,9 @@ function Footer() {
 
   return (
     <footer className="w-full bg-gray-800 text-white py-8">
-      <div className="container mx-auto flex flex-col items-center">
-        <p className="text-sm mb-6">© 2024 AcadPTec. Todos os direitos reservados.</p>
+      <div className="container mx-auto flex flex-col md:flex-row justify-between items-center space-y-6 md:space-y-0">        
         
+
         {/* Formulário de Contato */}
         <form className="w-full max-w-md" onSubmit={sendEmail}>
           <h3 className="text-xl font-semibold mb-4">Contato</h3>
@@ -99,7 +99,22 @@ function Footer() {
             Enviar
           </button>
         </form>
+
+        {/* Informações */}
+        <div className="w-full md:w-1/2 text-center font-medium font-mono px-5">
+          <h2>Quer conhecer eventos académicos perto da sua residência?</h2>
+          <h3 className="text-2xl font-semibold mb-4">Eventos Académicos:</h3>
+          <ul>
+            <li className="mb-2">Evento 1: Workshop de IA - 25/10/2024</li>
+            <li className="mb-2">Evento 2: Conferência de Tecnologia - 01/11/2024</li>
+            <li className="mb-2">Evento 3: Simpósio de Sustentabilidade - 15/11/2024</li>
+          </ul>
+        </div>
       </div>
+      <div className="text-center mt-6">
+        <p className="text-sm">© 2024 AcadPTec. Todos os direitos reservados.</p>
+      </div>
+
     </footer>
   );
 }

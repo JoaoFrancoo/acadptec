@@ -5,19 +5,25 @@ import Login from './pages/login';
 import Register from './pages/register';
 import Organizadores from './pages/organizadores'
 import Navbar from './components/Navbar';
-import Footer from './components/footer'
+import Footer from './components/footer';
 import Patrocinadores from './pages/patrocinadores';
+import ErrorBoundary from './components/ErrorBoundary';
+
 function App() {
   return (
     <Router>
       <Navbar />
-      <Routes>
-        <Route path="/" element={< Home/>} />
-        <Route path="/login" element={< Login/>}/>
-        <Route path="/register" element={< Register/>}/>
-        <Route path="/organizadores" element={<Organizadores/>}/>
-        <Route path="/patrocinadores" element={<Patrocinadores/>}/>
+      <ErrorBoundary>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/organizadores" element={<Organizadores />} />
+          <Route path="/patrocinadores" element={<Patrocinadores />} />
+          <Route path="/footer" element={<Footer />} />
+
         </Routes>
+      </ErrorBoundary>
     </Router>
     
   )
