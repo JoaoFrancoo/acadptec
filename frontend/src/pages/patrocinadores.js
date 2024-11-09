@@ -7,7 +7,7 @@ const Patrocinadores = () => {
       fetch('http://localhost:8081/patrocinadores')
       .then(res => res.json())
       .then(data => {
-        console.log(data); //Verifique o formato da resposta
+        console.log(data); 
         setData(data);
       })
       .catch(err => console.log(err));
