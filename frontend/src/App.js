@@ -9,6 +9,7 @@ import Footer from './components/footer';
 import Patrocinadores from './pages/patrocinadores';
 import ErrorBoundary from './components/ErrorBoundary';
 import Perfil from './pages/perfil'
+import Eventos from './pages/eventos'
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
           <Route path="/organizadores" element={<Organizadores />} />
           <Route path="/patrocinadores" element={<Patrocinadores />} />
           <Route path="/perfil" element={<Perfil />}/>
+          <Route path="/eventos" element={<Eventos />}/>
           <Route path="/footer" element={<Footer />} />
 
         </Routes>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { jwtDecode } from 'jwt-decode';
 
 const EditarPerfil = () => {
   const [nomeUtilizador, setNomeUtilizador] = useState('');
@@ -6,23 +7,45 @@ const EditarPerfil = () => {
   const [foto, setFoto] = useState(null);
   const [mensagem, setMensagem] = useState('');
   const [fotoAtual, setFotoAtual] = useState('');
-  
-  const userId = 2;
 
+  const token = localStorage.getItem('token');
+
+  // Verifique se o token existe antes de continuar
   useEffect(() => {
+    if (!token) {
+      setMensagem('Inicia sessão para veres o teu perfil.');
+      return;
+    }
+
+    const decodedToken = jwtDecode(token);
+    const userId = decodedToken.id; // Extrai o userId do token decodificado
+
     const fetchUserData = async () => {
       try {
-        const response = await fetch(`/user/${userId}`); 
+        const response = await fetch(`http://localhost:8081/user/${userId}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Erro ao buscar dados do utilizador');
+        }
+
         const data = await response.json();
         setNomeUtilizador(data.nome);
         setFotoAtual(`/uploads/${data.foto}`);
       } catch (error) {
-        console.error('Erro ao buscar dados do utilizador:', error);
+        console.error(error.message);
+        setMensagem('Erro ao buscar os dados do perfil.');
       }
     };
 
     fetchUserData();
-  }, [userId]);
+  }, [token]); // Dependência do token para a execução do useEffect
 
   const handleFotoChange = (e) => {
     setFoto(e.target.files[0]);
@@ -36,9 +59,15 @@ const EditarPerfil = () => {
     formData.append('password', novaPasse);  
     if (foto) formData.append('foto', foto); 
 
+    const decodedToken = jwtDecode(token);
+    const userId = decodedToken.id; // Extrai o userId novamente para o envio da requisição
+
     try {
-      const response = await fetch(`/user/${userId}`, {
+      const response = await fetch(`http://localhost:8081/user/${userId}`, {
         method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
         body: formData,
       });
 
@@ -100,7 +129,7 @@ const EditarPerfil = () => {
             Atualizar Perfil
           </button>
         </form>
-        {mensagem && <p className="text-center text-green-500 mt-4">{mensagem}</p>}
+        {mensagem && <p className="text-center text-red-500 mt-4">{mensagem}</p>}
       </div>
     </div>
   );
