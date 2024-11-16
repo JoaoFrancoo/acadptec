@@ -10,7 +10,6 @@ const EditarPerfil = () => {
 
   const token = localStorage.getItem('token');
 
-  // Verifique se o token existe antes de continuar
   useEffect(() => {
     if (!token) {
       setMensagem('Inicia sessão para veres o teu perfil.');
@@ -18,7 +17,7 @@ const EditarPerfil = () => {
     }
 
     const decodedToken = jwtDecode(token);
-    const userId = decodedToken.id; // Extrai o userId do token decodificado
+    const userId = decodedToken.id;
 
     const fetchUserData = async () => {
       try {
@@ -37,7 +36,7 @@ const EditarPerfil = () => {
 
         const data = await response.json();
         setNomeUtilizador(data.nome);
-        setFotoAtual(`/uploads/${data.foto}`);
+        setFotoAtual(require(`../imagens/${data.foto}`));
       } catch (error) {
         console.error(error.message);
         setMensagem('Erro ao buscar os dados do perfil.');
@@ -45,7 +44,7 @@ const EditarPerfil = () => {
     };
 
     fetchUserData();
-  }, [token]); // Dependência do token para a execução do useEffect
+  }, [token]);
 
   const handleFotoChange = (e) => {
     setFoto(e.target.files[0]);
@@ -56,11 +55,11 @@ const EditarPerfil = () => {
 
     const formData = new FormData();
     formData.append('nome', nomeUtilizador); 
-    formData.append('password', novaPasse);  
+    formData.append('password', novaPasse); 
     if (foto) formData.append('foto', foto); 
 
     const decodedToken = jwtDecode(token);
-    const userId = decodedToken.id; // Extrai o userId novamente para o envio da requisição
+    const userId = decodedToken.id;
 
     try {
       const response = await fetch(`http://localhost:8081/user/${userId}`, {

@@ -24,15 +24,15 @@ const db = mysql.createConnection({
 
 db.connect((err) => {
   if (err) {
-    console.error('Erro ao ligar ao banco de dados:', err);
+    console.error('Erro ao ligar à base de dados:', err);
   } else {
-    console.log('Ligado ao banco de dados');
+    console.log('Ligado à base de dados');
   }
 });
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, './uploads/');  
+    cb(null, '../frontend/src/imagens/');  
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + path.extname(file.originalname)); 
@@ -51,18 +51,16 @@ app.get('/users', (req,res) => {
 
 app.post('/comprar-bilhete/:id_evento', authMiddleware, async (req, res) => {
   const { id_evento } = req.params;
-  const id_cliente = req.id_cliente; // ID do cliente extraído do token
+  const id_cliente = req.id_cliente;
 
   if (!id_cliente) {
     return res.status(400).json({ error: 'ID do cliente não encontrado no token' });
   }
 
   try {
-    // Iniciando a transação
     await db.query('BEGIN');
     console.log(`Iniciando a transação para o evento ${id_evento} e cliente ${id_cliente}`);
 
-    // Passo 1: Verificar se a capacidade está disponível e fazer a inscrição
     const result = await db.query(
       `UPDATE salas s
        JOIN eventos e ON e.id_sala = s.id_sala
@@ -73,13 +71,11 @@ app.post('/comprar-bilhete/:id_evento', authMiddleware, async (req, res) => {
 
     console.log(`Linhas afetadas pela atualização: ${result[0]?.affectedRows || 0}`);
 
-    // Se não houve alteração (capacidade já esgotada)
     if (result[0]?.affectedRows === 0) {
       await db.query('ROLLBACK');
       return res.status(400).json({ error: 'Capacidade esgotada' });
     }
 
-    // Log para verificar o novo valor da capacidade
     const newCapacityResult = await db.query(
       `SELECT s.capacidade FROM salas s
        JOIN eventos e ON e.id_sala = s.id_sala
@@ -90,23 +86,18 @@ app.post('/comprar-bilhete/:id_evento', authMiddleware, async (req, res) => {
     const newCapacity = newCapacityResult[0]?.capacidade;
     console.log(`Nova capacidade da sala: ${newCapacity}`);
 
-    // Passo 2: Inserir a inscrição do cliente
     await db.query(
       `INSERT INTO inscricoes (id_cliente, id_evento) VALUES (?, ?)`,
       [id_cliente, id_evento]
     );
 
-    // Commit da transação
     await db.query('COMMIT');
-    console.log(`Transação concluída com sucesso para o evento ${id_evento} e cliente ${id_cliente}`);
-
-    // Retorna a nova capacidade após a compra
+  
     res.json({ mensagem: 'Bilhete comprado com sucesso', capacidade: newCapacity });
 
   } catch (error) {
-    // Caso ocorra qualquer erro, faz o rollback e retorna o erro
     await db.query('ROLLBACK');
-    console.error('Erro ao comprar bilhete:', error);  // Log do erro no console para depuração
+    console.error('Erro ao comprar bilhete:', error); 
     res.status(500).json({ error: 'Erro ao comprar bilhete' });
   }
 });
@@ -153,33 +144,36 @@ app.post('/login', async (req, res) => {
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) return res.status(401).json({ message: 'Palavra-passe incorreta' });
 
-    // Verifique se o id do cliente está sendo passado corretamente
-    console.log('ID do cliente:', user.user_id);
-
-    // Gerar o token com o id do cliente
     const token = jwt.sign({ id: user.user_id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
     res.json({ message: 'Login realizado com sucesso!', token });
   });
 });
 
-app.get('/user/:id', (req, res) => {
+app.get('/user/:id', authMiddleware, (req, res) => {
   const userId = req.params.id;
-  const sql = 'SELECT id, nome, email, foto FROM login WHERE id = ?';
-  
-  db.query(sql, [userId], (err, data) => {
-    if (err) return res.status(500).json({ message: 'Erro ao buscar dados do utilizador' });
-    if (data.length === 0) return res.status(404).json({ message: 'Utilizador não encontrado' });
+  const sql = 'SELECT user_id, foto, email, nome FROM login WHERE user_id = ?';
 
-    res.json(data[0]); 
+  db.query(sql, [userId], (err, data) => {
+    if (err) {
+      console.error('Erro ao buscar dados do utilizador:', err);
+      return res.status(500).json({ message: 'Erro ao buscar dados do utilizador' });
+    }
+    if (data.length === 0) {
+      return res.status(404).json({ message: 'Utilizador não encontrado' });
+    }
+
+    res.json(data[0]);
   });
 });
+
+
 
 app.put('/user/:id', upload.single('foto'), async (req, res) => {
   const { nome, password } = req.body;
   const userId = req.params.id;
   const foto = req.file ? req.file.filename : null;
-  
+
   const updateFields = [];
   const params = [];
 
@@ -200,7 +194,7 @@ app.put('/user/:id', upload.single('foto'), async (req, res) => {
     return res.status(400).json({ message: 'Nenhuma informação para atualizar' });
   }
 
-  const sql = `UPDATE login SET ${updateFields.join(', ')} WHERE id = ?`;
+  const sql = `UPDATE login SET ${updateFields.join(', ')} WHERE user_id = ?`;
   params.push(userId);
 
   db.query(sql, params, (err, result) => {
@@ -212,6 +206,7 @@ app.put('/user/:id', upload.single('foto'), async (req, res) => {
     res.json({ message: 'Perfil atualizado com sucesso!' });
   });
 });
+
 
 app.listen(8081, () => {
   console.log('Servidor iniciado na porta 8081');

@@ -26,7 +26,7 @@ function EventosPage() {
 
   const handleComprarBilhete = async (id_evento) => {
     try {
-      const token = localStorage.getItem('token'); 
+      const token = localStorage.getItem('token');
 
       if (!token) {
         throw new Error('Token não encontrado');
@@ -36,27 +36,22 @@ function EventosPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,  // Envia o token JWT no cabeçalho
+          'Authorization': `Bearer ${token}`,
         },
       });
 
       if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao comprar bilhete');
       }
-
-      // Atualiza a lista de eventos com a nova capacidade
-      const data = await response.json();
-      setEventos((prevEventos) =>
-        prevEventos.map((evento) =>
-          evento.id_evento === id_evento ? { ...evento, capacidade: data.capacidade } : evento
-        )
-      );
+      
+      window.location.reload();
     } catch (error) {
       console.error(error.message);
-      setError(error.message);  // Exibe o erro, caso ocorra
+      setError(error.message);
     }
   };
 
-  // Se estiver carregando
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -65,7 +60,6 @@ function EventosPage() {
     );
   }
 
-  // Se houver um erro
   if (error) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -93,8 +87,6 @@ function EventosPage() {
             <p className="text-gray-600 mt-1 mb-12">
               <span className="font-semibold">Sala:</span> {evento.nome_sala} (Capacidade: {evento.capacidade})
             </p>
-
-            {/* Botão de compra de bilhete */}
             <button
               onClick={() => handleComprarBilhete(evento.id_evento)}
               className="absolute bottom-4 right-4 bg-blue-600 text-white font-semibold py-2 px-4 rounded-full shadow-lg hover:bg-blue-700 transition-transform transform hover:scale-105"

@@ -21,8 +21,6 @@ function Home() {
           
         </div>
       </div>
-
-      {/* Adicionando o rodapé aqui */}
       <Footer />
     </div>
   )
