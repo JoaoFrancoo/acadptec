@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const Login = () => {
@@ -8,6 +9,8 @@ const Login = () => {
   });
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+
+  const navigate = useNavigate(); // Inicializa o hook
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -35,6 +38,12 @@ const Login = () => {
         localStorage.setItem('token', data.token);
         setSuccessMessage('Login realizado com sucesso!');
         setErrorMessage('');
+
+        // Redireciona para a página de perfil
+        setTimeout(() => {
+          navigate(`/perfil/${data.user_id}`); // Exemplo: substitua com o ID do usuário, se disponível
+        }, 1000); 
+
       } else {
         setErrorMessage(data.message);
         setSuccessMessage('');
