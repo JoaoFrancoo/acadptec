@@ -117,7 +117,7 @@ app.get('/eventos', (req, res) => {
     })
   })
 
-app.post('/register', async (req, res) => {
+app.post('/register', upload.single('foto'), async (req, res) => {
   const { nome, email, password } = req.body;
   const hashedPassword = await bcrypt.hash(password, 10);
   
@@ -163,7 +163,10 @@ app.get('/user/:id', authMiddleware, (req, res) => {
       return res.status(404).json({ message: 'Utilizador não encontrado' });
     }
 
-    res.json(data[0]);
+    const user = data[0];
+    user.foto = user.foto ? `${req.protocol}://${req.get('host')}/${user.foto}` : null;
+
+    res.json(user);
   });
 });
 
