@@ -57,47 +57,96 @@ const Login = () => {
   
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100">
-      <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg">
-        <h2 className="text-2xl font-bold text-center mb-6">Login</h2>
-        
-        {errorMessage && <p className="text-red-500 text-center mb-4">{errorMessage}</p>}
-        {successMessage && <p className="text-green-500 text-center mb-4">{successMessage}</p>}
-
-        <form onSubmit={handleSubmit} className="space-y-6">
+    <div className="flex flex-col lg:flex-row min-h-screen">
+      {/* Lado Esquerdo */}
+      <div className="flex-1 flex flex-col justify-center items-start p-12 bg-gray-100">
+        <h1 className="text-4xl font-bold text-blue-600 leading-tight">
+          A transformar Pensadores <br />  Eventos Acadêmicos
+        </h1>
+        <p className="mt-4 text-gray-600">Welcome back! Please login to your account.</p>
+        <form onSubmit={handleSubmit} className="w-full mt-6 max-w-sm space-y-4">
+          {errorMessage && (
+            <p className="text-red-500 text-center mb-4">{errorMessage}</p>
+          )}
+          {successMessage && (
+            <p className="text-green-500 text-center mb-4">{successMessage}</p>
+          )}
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Email Address
+            </label>
             <input
               type="email"
               name="email"
-              placeholder="Email"
+              placeholder="Email Address"
               value={formData.email}
               onChange={handleChange}
               required
-              className="w-full mt-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
-          
+
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">Senha</label>
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Password
+            </label>
             <input
               type="password"
               name="password"
-              placeholder="Senha"
+              placeholder="Password"
               value={formData.password}
               onChange={handleChange}
               required
-              className="w-full mt-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+          </div>
+
+          <div className="flex items-center justify-between text-sm text-gray-600">
+            <label>
+              <input type="checkbox" className="mr-2" /> Remember Me
+            </label>
+            <a href="#" className="text-blue-500 hover:underline">
+              Forgot Password?
+            </a>
           </div>
 
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors"
           >
-            Entrar
+            Login
           </button>
+
+          <div className="text-center text-sm text-gray-600 mt-4">
+            Or login with{" "}
+            <a href="#" className="text-blue-500 hover:underline">
+              Facebook
+            </a>
+            ,{" "}
+            <a href="#" className="text-blue-500 hover:underline">
+              LinkedIn
+            </a>
+            , or{" "}
+            <a href="#" className="text-blue-500 hover:underline">
+              Google
+            </a>
+          </div>
         </form>
+      </div>
+
+      {/* Lado Direito */}
+      <div className="flex-1 bg-blue-50 flex items-center justify-center">
+        <img
+          src="/images/1731763488933.svg" // Substitua pelo caminho correto da sua imagem
+          alt="Illustration"
+          className="max-w-md"
+        />
       </div>
     </div>
   );

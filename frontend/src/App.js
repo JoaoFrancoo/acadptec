@@ -22,7 +22,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/organizadores" element={<Organizadores />} />
           <Route path="/patrocinadores" element={<Patrocinadores />} />
-          <Route path="/perfil/:id" element={<Perfil />}/>
+          <Route path="/perfil" element={<Perfil />}/>
           <Route path="/eventos" element={<Eventos />}/>
           <Route path="/footer" element={<Footer />} />
 
