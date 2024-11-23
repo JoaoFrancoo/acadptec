@@ -14,7 +14,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-
+app.use('/uploads', express.static(path.join(__dirname, '../frontend/src/imagens')));
 const db = mysql.createConnection({
   host: "localhost",
   user: 'root',
@@ -32,14 +32,15 @@ db.connect((err) => {
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, '../frontend/src/imagens/');  
+    cb(null, path.resolve(__dirname, '../frontend/src/imagens'));
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname)); 
+    cb(null, Date.now() + path.extname(file.originalname));
   },
 });
 
 const upload = multer({ storage });
+
 
 app.get('/users', (req,res) => {
   const sql = "SELECT * FROM organizadores";
@@ -203,7 +204,7 @@ app.put('/user/:id', authMiddleware, upload.single('foto'), async (req, res) => 
 });
 
 app.get('/user/me/details', authMiddleware, (req, res) => {
-  const userId = req.id_cliente; 
+  const userId = req.id_cliente;
 
   const sqlUser = 'SELECT user_id, foto, email, nome FROM login WHERE user_id = ?';
   const sqlInscricoes = `
@@ -217,6 +218,8 @@ app.get('/user/me/details', authMiddleware, (req, res) => {
     if (userData.length === 0) return res.status(404).json({ message: 'Utilizador não encontrado' });
 
     const user = userData[0];
+    user.foto = user.foto ? `${req.protocol}://${req.get('host')}/uploads/${user.foto}` : null;
+
     db.query(sqlInscricoes, [userId], (err, inscricoesData) => {
       if (err) return res.status(500).json({ message: 'Erro ao buscar inscrições' });
 
@@ -225,6 +228,25 @@ app.get('/user/me/details', authMiddleware, (req, res) => {
         inscricoes: inscricoesData,
       });
     });
+  });
+});
+
+app.get('/eventos/:id', (req, res) => {
+  const { id } = req.params;
+
+  const sql = `
+    SELECT e.id_evento, e.nome AS nome_evento, e.data_inicio, e.data_fim, 
+           c.descricao AS categoria, s.nome_sala, s.capacidade
+    FROM eventos e
+    JOIN salas s ON e.id_sala = s.id_sala
+    JOIN categorias c ON e.id_categoria = c.id_categoria
+    WHERE e.id_evento = ?;
+  `;
+
+  db.query(sql, [id], (err, data) => {
+    if (err) return res.status(500).json({ error: 'Erro ao buscar evento' });
+    if (data.length === 0) return res.status(404).json({ error: 'Evento não encontrado' });
+    res.json(data[0]);
   });
 });
 

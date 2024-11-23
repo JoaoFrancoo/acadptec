@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { jwtDecode } from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode'; 
 
 const PerfilUtilizador = () => {
   const [userData, setUserData] = useState(null);
@@ -16,7 +16,7 @@ const PerfilUtilizador = () => {
       }
 
       try {
-        const decodedToken = jwtDecode(token); 
+        const decodedToken = jwtDecode(token);
         if (!decodedToken) {
           setError('Token inválido.');
           setLoading(false);
@@ -55,7 +55,7 @@ const PerfilUtilizador = () => {
         <h1 className="text-2xl font-bold mb-4 text-center">Perfil do Utilizador</h1>
         <div className="text-center mb-4">
           <img
-            src={userData.user.foto}
+            src={userData.user.foto || '/default-profile.png'} // Use imagem padrão se `foto` for null
             alt="Foto do Utilizador"
             className="w-24 h-24 rounded-full object-cover mx-auto"
           />

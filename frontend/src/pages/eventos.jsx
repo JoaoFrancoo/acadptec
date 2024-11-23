@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+
 
 function EventosPage() {
   const [eventos, setEventos] = useState([]);
@@ -73,28 +75,35 @@ function EventosPage() {
       <h1 className="text-3xl font-semibold text-center text-gray-800 mb-8">Lista de Eventos</h1>
       <ul className="space-y-6 max-w-4xl mx-auto">
         {eventos.map((evento) => (
-          <li
-            key={evento.id_evento}
-            className="bg-white shadow-md rounded-lg p-6 relative transition-transform transform hover:scale-105"
-          >
-            <h2 className="text-2xl font-semibold text-blue-600">{evento.nome_evento}</h2>
-            <p className="text-gray-600 mt-2">
-              <span className="font-semibold">Data:</span> {evento.data_inicio} - {evento.data_fim}
-            </p>
-            <p className="text-gray-600 mt-1">
-              <span className="font-semibold">Categoria:</span> {evento.categoria}
-            </p>
-            <p className="text-gray-600 mt-1 mb-12">
-              <span className="font-semibold">Sala:</span> {evento.nome_sala} (Capacidade: {evento.capacidade})
-            </p>
-            <button
-              onClick={() => handleComprarBilhete(evento.id_evento)}
-              className="absolute bottom-4 right-4 bg-blue-600 text-white font-semibold py-2 px-4 rounded-full shadow-lg hover:bg-blue-700 transition-transform transform hover:scale-105"
-              disabled={evento.capacidade === 0} 
-            >
-              {evento.capacidade === 0 ? 'Esgotado' : 'Comprar Bilhete'}
-            </button>
-          </li>
+         <li
+         key={evento.id_evento}
+         className="bg-white shadow-md rounded-lg p-6 relative transition-transform transform hover:scale-105"
+       >
+         <h2 className="text-2xl font-semibold text-blue-600">{evento.nome_evento}</h2>
+         <p className="text-gray-600 mt-2">
+           <span className="font-semibold">Data:</span> {evento.data_inicio} - {evento.data_fim}
+         </p>
+         <p className="text-gray-600 mt-1">
+           <span className="font-semibold">Categoria:</span> {evento.categoria}
+         </p>
+         <p className="text-gray-600 mt-1 mb-12">
+           <span className="font-semibold">Sala:</span> {evento.nome_sala} (Capacidade: {evento.capacidade})
+         </p>
+         
+         <Link
+           to={`/eventos/${evento.id_evento}`}
+           className="absolute bottom-4 left-4 bg-gray-600 text-white font-semibold py-2 px-4 rounded-full shadow-lg hover:bg-gray-700 transition-transform transform hover:scale-105"
+         >
+           Ver Detalhes
+         </Link>
+         <button
+           onClick={() => handleComprarBilhete(evento.id_evento)}
+           className="absolute bottom-4 right-4 bg-blue-600 text-white font-semibold py-2 px-4 rounded-full shadow-lg hover:bg-blue-700 transition-transform transform hover:scale-105"
+           disabled={evento.capacidade === 0} 
+         >
+           {evento.capacidade === 0 ? 'Esgotado' : 'Comprar Bilhete'}
+         </button>
+       </li>
         ))}
       </ul>
     </div>
