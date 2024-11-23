@@ -59,7 +59,6 @@ app.post('/comprar-bilhete/:id_evento', authMiddleware, async (req, res) => {
 
   try {
     await db.query('BEGIN');
-    console.log(`Iniciando a transação para o evento ${id_evento} e cliente ${id_cliente}`);
 
     const result = await db.query(
       `UPDATE salas s
@@ -68,8 +67,6 @@ app.post('/comprar-bilhete/:id_evento', authMiddleware, async (req, res) => {
        WHERE e.id_evento = ? AND s.capacidade > 0`,
       [id_evento]
     );
-
-    console.log(`Linhas afetadas pela atualização: ${result[0]?.affectedRows || 0}`);
 
     if (result[0]?.affectedRows === 0) {
       await db.query('ROLLBACK');
@@ -117,19 +114,26 @@ app.get('/eventos', (req, res) => {
     })
   })
 
-app.post('/register', upload.single('foto'), async (req, res) => {
-  const { nome, email, password } = req.body;
-  const hashedPassword = await bcrypt.hash(password, 10);
+  app.post('/register', upload.single('foto'), async (req, res) => {
+    const { nome, email, password } = req.body;
   
-  const sql = 'INSERT INTO login (nome, email, password) VALUES (?, ?, ?)';
-  db.query(sql, [nome, email, hashedPassword], (err, result) => {
-    if (err) {
-      console.error('Erro ao registrar o utilizador:', err);
-      return res.status(500).json({ message: 'Erro ao registrar o utilizador' });
+    if (!req.file) {
+      return res.status(400).json({ message: 'Por favor, envie uma foto.' });
     }
-    res.status(201).json({ message: 'Utilizador registrado com sucesso!' });
+  
+    const foto = req.file.filename;
+    const hashedPassword = await bcrypt.hash(password, 10);
+  
+    const sql = 'INSERT INTO login (foto, email, nome, password) VALUES (?, ?, ?, ?)';
+    db.query(sql, [foto, email, nome, hashedPassword], (err, result) => {
+      if (err) {
+        console.error('Erro ao registrar o utilizador:', err);
+        return res.status(500).json({ message: 'Erro ao registrar o utilizador' });
+      }
+      res.status(201).json({ message: 'Utilizador registrado com sucesso!' });
+    });
   });
-});
+  
 
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
@@ -155,24 +159,16 @@ app.get('/user/:id', authMiddleware, (req, res) => {
   const sql = 'SELECT user_id, foto, email, nome FROM login WHERE user_id = ?';
 
   db.query(sql, [userId], (err, data) => {
-    if (err) {
-      console.error('Erro ao buscar dados do utilizador:', err);
-      return res.status(500).json({ message: 'Erro ao buscar dados do utilizador' });
-    }
-    if (data.length === 0) {
-      return res.status(404).json({ message: 'Utilizador não encontrado' });
-    }
+    if (err) return res.status(500).json({ message: 'Erro ao buscar dados do utilizador' });
+    if (data.length === 0) return res.status(404).json({ message: 'Utilizador não encontrado' });
 
     const user = data[0];
-    user.foto = user.foto ? `${req.protocol}://${req.get('host')}/${user.foto}` : null;
-
+    user.foto = user.foto ? `${req.protocol}://${req.get('host')}/uploads/${user.foto}` : null;
     res.json(user);
   });
 });
 
-
-
-app.put('/user/:id', upload.single('foto'), async (req, res) => {
+app.put('/user/:id', authMiddleware, upload.single('foto'), async (req, res) => {
   const { nome, password } = req.body;
   const userId = req.params.id;
   const foto = req.file ? req.file.filename : null;
@@ -200,16 +196,37 @@ app.put('/user/:id', upload.single('foto'), async (req, res) => {
   const sql = `UPDATE login SET ${updateFields.join(', ')} WHERE user_id = ?`;
   params.push(userId);
 
-  db.query(sql, params, (err, result) => {
-    if (err) {
-      console.error('Erro ao atualizar dados do utilizador:', err);
-      return res.status(500).json({ message: 'Erro ao atualizar dados do utilizador' });
-    }
-
+  db.query(sql, params, (err) => {
+    if (err) return res.status(500).json({ message: 'Erro ao atualizar dados do utilizador' });
     res.json({ message: 'Perfil atualizado com sucesso!' });
   });
 });
 
+app.get('/user/me/details', authMiddleware, (req, res) => {
+  const userId = req.id_cliente; 
+
+  const sqlUser = 'SELECT user_id, foto, email, nome FROM login WHERE user_id = ?';
+  const sqlInscricoes = `
+    SELECT e.id_evento, e.nome AS nome_evento
+    FROM inscricoes i
+    JOIN eventos e ON i.id_evento = e.id_evento
+    WHERE i.id_cliente = ?`;
+
+  db.query(sqlUser, [userId], (err, userData) => {
+    if (err) return res.status(500).json({ message: 'Erro ao buscar dados do utilizador' });
+    if (userData.length === 0) return res.status(404).json({ message: 'Utilizador não encontrado' });
+
+    const user = userData[0];
+    db.query(sqlInscricoes, [userId], (err, inscricoesData) => {
+      if (err) return res.status(500).json({ message: 'Erro ao buscar inscrições' });
+
+      res.json({
+        user,
+        inscricoes: inscricoesData,
+      });
+    });
+  });
+});
 
 app.listen(8081, () => {
   console.log('Servidor iniciado na porta 8081');

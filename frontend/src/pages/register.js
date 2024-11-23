@@ -81,7 +81,7 @@ const Register = () => {
           <input
             type="password"
             name="password"
-            placeholder="Senha"
+            placeholder="palavra-passe"
             value={formData.password}
             onChange={handleChange}
             required
@@ -90,6 +90,7 @@ const Register = () => {
           <input
             type="file"
             name="foto"
+            value={formData.foto}
             onChange={handleFotoChange}
             required
             className="w-full px-3 py-2 border rounded-md"
