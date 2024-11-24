@@ -143,7 +143,7 @@ const Login = () => {
       {/* Lado Direito */}
       <div className="flex-1 bg-blue-50 flex items-center justify-center">
         <img
-          src="/images/1731763488933.svg" // Substitua pelo caminho correto da sua imagem
+          src="/imagens/LogoAcadptec.png" // Substitua pelo caminho correto da sua imagem
           alt="Illustration"
           className="max-w-md"
         />
