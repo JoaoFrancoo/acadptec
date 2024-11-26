@@ -1,5 +1,4 @@
 import React from 'react'
-import Img from '../imagens/img.png'
 import Footer from '../components/footer'
 
 function Home() {
