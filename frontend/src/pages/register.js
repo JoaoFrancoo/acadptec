@@ -147,7 +147,7 @@ const Register = () => {
       </div>
 
       {/* Lado Direito */}
-      <div className="flex-1 bg-blue-50 flex items-center justify-center">
+      <div className="flex-1 bg-gray-100 flex items-center justify-center">
         <img
           src="/imagens/LogoAcadptec.png" // Substitua pelo caminho correto da sua imagem
           alt="Illustration"
