@@ -55,7 +55,7 @@ const PerfilUtilizador = () => {
         <h1 className="text-2xl font-bold mb-4 text-center">Perfil do Utilizador</h1>
         <div className="text-center mb-4">
           <img
-            src={userData.user.foto || '/default-profile.png'} // Use imagem padrão se `foto` for null
+            src={userData.user.foto || '/default-profile.png'}
             alt="Foto do Utilizador"
             className="w-24 h-24 rounded-full object-cover mx-auto"
           />
