@@ -1,27 +1,28 @@
-const jwt = require('jsonwebtoken');
-
 const authMiddleware = (req, res, next) => {
-  // Verificar se o token foi enviado nos cabeçalhos
-  const token = req.headers['authorization'] && req.headers['authorization'].split(' ')[1];
+  const token = req.headers['authorization'];
 
   if (!token) {
-    return res.status(403).json({ message: 'Token de autenticação não fornecido' });
+    return res.status(403).json({ message: 'Token não fornecido' });
   }
 
-  // Verificar o token
-  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-    if (err) {
-      return res.status(401).json({ message: 'Token inválido ou expirado' });
+  const jwtToken = token.split(' ')[1]; // Formato "Bearer token"
+
+  try {
+    const decoded = jwt.verify(jwtToken, process.env.JWT_SECRET);
+
+    // Log para verificar o conteúdo do token
+    console.log('Token decodificado:', decoded);
+
+    req.userId = decoded.id;
+    req.userNivel = decoded.nivel;
+
+    if (decoded.nivel !== 4) {
+      return res.status(403).json({ message: 'Acesso negado, apenas administradores.' });
     }
 
-    // Extraindo o id_cliente do token decodificado
-    req.id_cliente = decoded.id;  // Aqui estamos pegando o id que foi colocado no payload
-
-    console.log('ID do cliente extraído do token:', req.id_cliente);  // Verificando se o id_cliente foi extraído corretamente
-
-    // Passa o controle para o próximo middleware ou para a rota
     next();
-  });
+  } catch (err) {
+    console.error('Erro ao verificar o token:', err);
+    return res.status(401).json({ message: 'Token inválido ou expirado' });
+  }
 };
-
-module.exports = authMiddleware;

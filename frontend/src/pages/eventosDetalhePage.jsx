@@ -4,9 +4,11 @@ import { useParams } from 'react-router-dom';
 function EventoDetalhesPage() {
   const { id } = useParams();
   const [evento, setEvento] = useState(null);
+  const [isInscrito, setIsInscrito] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Função para buscar detalhes do evento
   useEffect(() => {
     const fetchEvento = async () => {
       try {
@@ -16,6 +18,24 @@ function EventoDetalhesPage() {
         }
         const data = await response.json();
         setEvento(data);
+
+        // Verificar se o utilizador está inscrito no evento
+        const token = localStorage.getItem('token'); // Supõe que o token está armazenado no localStorage
+        if (token) {
+          const inscricaoResponse = await fetch(`http://localhost:8081/user/me/details`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          if (inscricaoResponse.ok) {
+            const inscricaoData = await inscricaoResponse.json();
+            const inscrito = inscricaoData.inscricoes.some(
+              (inscricao) => inscricao.id_evento === parseInt(id)
+            );
+            setIsInscrito(inscrito);
+          }
+        }
       } catch (error) {
         setError(error.message);
       } finally {
@@ -25,6 +45,35 @@ function EventoDetalhesPage() {
 
     fetchEvento();
   }, [id]);
+
+  // Função para desinscrever do evento
+  const handleDesinscrever = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Utilizador não autenticado');
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8081/retirar-bilhete/${id}`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        alert('Desinscrição realizada com sucesso');
+        setIsInscrito(false);
+      } else {
+        const errorData = await response.json();
+        alert(`Erro: ${errorData.error || 'Não foi possível desinscrever'}`);
+      }
+    } catch (error) {
+      console.error('Erro ao desinscrever:', error);
+      alert('Erro ao desinscrever');
+    }
+  };
 
   if (loading) {
     return (
@@ -67,6 +116,15 @@ function EventoDetalhesPage() {
           <span className="font-semibold">Capacidade:</span> {evento.capacidade}
         </p>
         <p className="text-gray-600 mt-4">{evento.descricao}</p>
+
+        {isInscrito && (
+          <button
+            onClick={handleDesinscrever}
+            className="mt-6 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+          >
+            Desinscrever
+          </button>
+        )}
       </div>
     </div>
   );
