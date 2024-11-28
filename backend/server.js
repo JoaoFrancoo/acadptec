@@ -218,6 +218,8 @@ app.post('/login', async (req, res) => {
     if (!passwordMatch) return res.status(401).json({ message: 'Palavra-passe incorreta' });
 
     const token = jwt.sign({ id: user.user_id, nivel: user.nivel }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    console.log('Dados no token:', { id: user.user_id, nivel: user.nivel });
+
 
     res.json({ message: 'Login realizado com sucesso!', token });
   });
@@ -273,19 +275,24 @@ app.get('/eventos/:id', (req, res) => {
 });
 
 
-// DASHBOARD SIDE 
+// DASHBOARD SIDE
+
+// Aplicação do middleware
+app.use('/admin', authMiddleware); 
 
 app.get('/dashboard', authMiddleware, async (req, res) => {
+  console.log('Informações do Usuário:', req.user);  // Aqui você tem acesso ao req.user com o id e nível
+
   try {
-    // Buscar todos os dados necessários
+    // Lógica da sua rota
     const clientes = await dbQuery('SELECT * FROM login');
     const eventos = await dbQuery('SELECT * FROM eventos');
     const palestrantes = await dbQuery('SELECT * FROM palestrantes');
     const organizadores = await dbQuery('SELECT * FROM organizadores');
     const solicitacoes = await dbQuery('SELECT * FROM solicitacoes_palestrante WHERE status = "pendente"');
 
-    // Retornar os dados para a dashboard
     res.json({
+      user: req.user,  // Incluindo o usuário na resposta para o frontend
       clientes,
       eventos,
       palestrantes,
@@ -298,24 +305,23 @@ app.get('/dashboard', authMiddleware, async (req, res) => {
   }
 });
 
-// Rota para pegar todos os clientes
-app.get('/admin/clientes', authMiddleware, (req, res) => {
-  if (req.userNivel !== 4) {
-    return res.status(403).json({ message: 'Acesso negado, apenas administradores.' });
-  }
+
+app.get('/admin/clientes', (req, res) => {
+  console.log('Token Decodificado no backend:', req.user); // Log das informações do usuário
 
   const sql = 'SELECT * FROM login';
   db.query(sql, (err, data) => {
-    if (err) return res.status(500).json({ message: 'Erro ao buscar clientes' });
+    if (err) {
+      console.error('Erro ao buscar dados:', err);
+      return res.status(500).json({ message: 'Erro ao buscar dados' });
+    }
     res.json(data);
   });
 });
 
 // Rota para pegar todos os eventos
-app.get('/admin/eventos', authMiddleware, (req, res) => {
-  if (req.userNivel !== 4) {
-    return res.status(403).json({ message: 'Acesso negado, apenas administradores.' });
-  }
+app.get('/admin/eventos', (req, res) => {
+  console.log('Token Decodificado no backend:', req.user); // Log das informações do usuário
 
   const sql = 'SELECT * FROM eventos';
   db.query(sql, (err, data) => {
@@ -324,11 +330,9 @@ app.get('/admin/eventos', authMiddleware, (req, res) => {
   });
 });
 
-// Rota para pegar todos os palestrantes (clientes com nivel 2)
-app.get('/admin/palestrantes', authMiddleware, (req, res) => {
-  if (req.userNivel !== 4) {
-    return res.status(403).json({ message: 'Acesso negado, apenas administradores.' });
-  }
+// Rota para pegar todos os palestrantes
+app.get('/admin/palestrantes', (req, res) => {
+  console.log('Token Decodificado no backend:', req.user); // Log das informações do usuário
 
   const sql = 'SELECT * FROM palestrantes';
   db.query(sql, (err, data) => {
@@ -337,15 +341,14 @@ app.get('/admin/palestrantes', authMiddleware, (req, res) => {
   });
 });
 
-// Rota para aprovar ou recusar um pedido de palestrante
-app.put('/admin/palestrante/:id', authMiddleware, (req, res) => {
-  if (req.userNivel !== 4) {
-    return res.status(403).json({ message: 'Acesso negado, apenas administradores.' });
-  }
-
+// Rota para atualizar o status do palestrante
+app.put('/admin/palestrante/:id', (req, res) => {
   const { id } = req.params;
   const { status } = req.body; // status pode ser 'aprovado' ou 'recusado'
 
+  console.log('Token Decodificado no backend:', req.user); // Log das informações do usuário
+
+  // Verificar se o status é válido
   if (!['aprovado', 'recusado'].includes(status)) {
     return res.status(400).json({ message: 'Status inválido' });
   }
@@ -356,7 +359,6 @@ app.put('/admin/palestrante/:id', authMiddleware, (req, res) => {
     res.json({ message: `Pedido de palestrante ${status} com sucesso.` });
   });
 });
-
 
 // Iniciar o servidor
 app.listen(8081, () => {

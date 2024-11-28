@@ -41,7 +41,7 @@ const Login = () => {
 
         // Redireciona para a página de perfil
         setTimeout(() => {
-          navigate(`/perfil/${data.user_id}`); // Exemplo: substitua com o ID do usuário, se disponível
+          navigate(`/perfil`); // Exemplo: substitua com o ID do usuário, se disponível
         }, 1000); 
 
       } else {

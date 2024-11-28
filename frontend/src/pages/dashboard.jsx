@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { jwtDecode } from 'jwt-decode';
 
 function AdminDashboard() {
   const [clientes, setClientes] = useState([]);
@@ -8,32 +9,53 @@ function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const token = localStorage.getItem('token'); // Supondo que o token esteja armazenado no localStorage
+  const token = localStorage.getItem('token');
+
+  console.log('Token no componente:', token);
+
+  if (token) {
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  }
 
   useEffect(() => {
+    console.log('Token no useEffect:', token);
+
     if (!token) {
       setError('Token não encontrado');
+      setLoading(false);
+      return;
+    }
+
+    let decodedToken;
+    try {
+      decodedToken = jwtDecode(token);
+      console.log('Token Decodificado:', decodedToken);
+
+      // Verificar se o nível do usuário é menor que 4
+      if (decodedToken.nivel < 4) {
+        setError('Acesso negado. Permissão insuficiente');
+        setLoading(false);
+        return;
+      }
+    } catch (e) {
+      setError('Token inválido ou corrompido');
+      setLoading(false);
       return;
     }
 
     const fetchData = async () => {
       try {
         const [clientesData, eventosData, palestrantesData] = await Promise.all([
-          axios.get('http://localhost:8081/admin/clientes', {
-            headers: { Authorization: `Bearer ${token}` }
-          }),
-          axios.get('http://localhost:8081/admin/eventos', {
-            headers: { Authorization: `Bearer ${token}` }
-          }),
-          axios.get('http://localhost:8081/admin/palestrantes', {
-            headers: { Authorization: `Bearer ${token}` }
-          })
+          axios.get('http://localhost:8081/admin/clientes'),
+          axios.get('http://localhost:8081/admin/eventos'),
+          axios.get('http://localhost:8081/admin/palestrantes'),
         ]);
 
         setClientes(clientesData.data);
         setEventos(eventosData.data);
         setPalestrantes(palestrantesData.data);
       } catch (err) {
+        console.error('Erro ao carregar dados:', err);
         setError('Erro ao carregar dados');
       } finally {
         setLoading(false);
@@ -45,56 +67,88 @@ function AdminDashboard() {
 
   const handleStatusChange = async (id, status) => {
     try {
-      await axios.put(`http://localhost:8081/admin/palestrante/${id}`, { status }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      // Atualiza a lista de palestrantes após a mudança de status
-      setPalestrantes(palestrantes.map(p => p.id_cliente === id ? { ...p, status } : p));
+      await axios.put(
+        `http://localhost:8081/admin/palestrante/${id}`,
+        { status },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      // Atualizar a lista de palestrantes após mudança de status
+      setPalestrantes((prev) =>
+        prev.map((palestrante) =>
+          palestrante.id_cliente === id ? { ...palestrante, status } : palestrante
+        )
+      );
     } catch (err) {
       setError('Erro ao atualizar status');
     }
   };
 
   if (loading) {
-    return <div>Carregando...</div>;
+    return <div className="text-center text-gray-500">Carregando...</div>;
   }
 
   if (error) {
-    return <div>{error}</div>;
+    return <div className="text-center text-red-500">{error}</div>;
   }
 
   return (
-    <div>
-      <h1>Dashboard do Administrador</h1>
+    <div className="container mx-auto p-6 bg-white rounded-lg shadow-lg">
+      <h1 className="text-3xl font-semibold text-center mb-6">Dashboard do Administrador</h1>
 
-      <h2>Clientes</h2>
-      <ul>
-        {clientes.map(cliente => (
-          <li key={cliente.user_id}>{cliente.nome} - {cliente.email}</li>
-        ))}
-      </ul>
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold mb-4">Clientes</h2>
+        <ul className="space-y-3">
+          {clientes.map((cliente) => (
+            <li key={cliente.user_id} className="flex justify-between bg-gray-100 p-4 rounded-lg shadow-md">
+              <span>{cliente.nome} - {cliente.email}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
 
-      <h2>Eventos</h2>
-      <ul>
-        {eventos.map(evento => (
-          <li key={evento.id_evento}>{evento.nome} - {evento.data_inicio} a {evento.data_fim}</li>
-        ))}
-      </ul>
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold mb-4">Eventos</h2>
+        <ul className="space-y-3">
+          {eventos.map((evento) => (
+            <li key={evento.id_evento} className="flex justify-between bg-gray-100 p-4 rounded-lg shadow-md">
+              <span>{evento.nome} - {evento.data_inicio} a {evento.data_fim}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
 
-      <h2>Palestrantes</h2>
-      <ul>
-        {palestrantes.map(palestrante => (
-          <li key={palestrante.id_cliente}>
-            {palestrante.nome} - Status: {palestrante.status}
-            {palestrante.status === 'pendente' && (
-              <div>
-                <button onClick={() => handleStatusChange(palestrante.id_cliente, 'aprovado')}>Aprovar</button>
-                <button onClick={() => handleStatusChange(palestrante.id_cliente, 'recusado')}>Recusar</button>
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold mb-4">Palestrantes</h2>
+        <ul className="space-y-3">
+          {palestrantes.map((palestrante) => (
+            <li key={palestrante.id_cliente} className="flex justify-between bg-gray-100 p-4 rounded-lg shadow-md">
+              <div className="flex flex-col">
+                <span>{palestrante.nome} - Status: {palestrante.status}</span>
+                {palestrante.status === 'pendente' && (
+                  <div className="mt-2 flex space-x-2">
+                    <button
+                      onClick={() => handleStatusChange(palestrante.id_cliente, 'aprovado')}
+                      className="px-4 py-2 bg-green-500 text-white rounded-lg shadow-md hover:bg-green-700"
+                    >
+                      Aprovar
+                    </button>
+                    <button
+                      onClick={() => handleStatusChange(palestrante.id_cliente, 'recusado')}
+                      className="px-4 py-2 bg-red-500 text-white rounded-lg shadow-md hover:bg-red-700"
+                    >
+                      Recusar
+                    </button>
+                  </div>
+                )}
               </div>
-            )}
-          </li>
-        ))}
-      </ul>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }

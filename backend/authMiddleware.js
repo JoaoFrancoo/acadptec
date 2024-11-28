@@ -1,28 +1,34 @@
 const authMiddleware = (req, res, next) => {
-  const token = req.headers['authorization'];
+  const authHeader = req.headers.authorization;
 
-  if (!token) {
-    return res.status(403).json({ message: 'Token não fornecido' });
+  if (!authHeader) {
+    console.error('Token não fornecido no cabeçalho');
+    return res.status(401).json({ message: 'Token não fornecido' });
   }
 
-  const jwtToken = token.split(' ')[1]; // Formato "Bearer token"
+  const token = authHeader.split(' ')[1];
 
-  try {
-    const decoded = jwt.verify(jwtToken, process.env.JWT_SECRET);
-
-    // Log para verificar o conteúdo do token
-    console.log('Token decodificado:', decoded);
-
-    req.userId = decoded.id;
-    req.userNivel = decoded.nivel;
-
-    if (decoded.nivel !== 4) {
-      return res.status(403).json({ message: 'Acesso negado, apenas administradores.' });
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) {
+      console.error('Erro ao verificar token:', err);
+      return res.status(401).json({ message: 'Token inválido ou expirado' });
     }
 
+    if (!decoded || !decoded.id || !decoded.nivel) {
+      console.error('Token decodificado está incompleto:', decoded);
+      return res.status(400).json({ message: 'Token inválido ou faltando informações' });
+    }
+
+    if (decoded.nivel !== 4) {
+      console.error('Usuário não tem permissão para acessar essa rota. Nível:', decoded.nivel);
+      return res.status(403).json({ message: 'Acesso negado. Permissão insuficiente' });
+    }
+
+    req.user = {
+      id: decoded.id,
+      nivel: decoded.nivel,
+    };
+
     next();
-  } catch (err) {
-    console.error('Erro ao verificar o token:', err);
-    return res.status(401).json({ message: 'Token inválido ou expirado' });
-  }
+  });
 };
