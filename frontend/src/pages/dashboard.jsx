@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
+import { useNavigate } from 'react-router-dom';
 
 function AdminDashboard() {
   const [clientes, setClientes] = useState([]);
@@ -10,6 +11,7 @@ function AdminDashboard() {
   const [error, setError] = useState(null);
 
   const token = localStorage.getItem('token');
+  const navigate = useNavigate();  // Hook para navegação (redirecionamento)
 
   console.log('Token no componente:', token);
 
@@ -87,6 +89,29 @@ function AdminDashboard() {
     }
   };
 
+  // Função para bloquear o usuário
+  const handleBlockUser = async (id) => {
+    try {
+      await axios.put(
+        `http://localhost:8081/admin/block/${id}`,  // Rota para bloquear usuário
+        { nivel: 0 },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      // Atualiza o status do usuário para bloqueado (nivel 0)
+      setClientes((prev) =>
+        prev.map((cliente) =>
+          cliente.user_id === id ? { ...cliente, nivel: 0 } : cliente
+        )
+      );
+    } catch (err) {
+      setError('Erro ao bloquear usuário');
+    }
+  };
+
   if (loading) {
     return <div className="text-center text-gray-500">Carregando...</div>;
   }
@@ -105,6 +130,12 @@ function AdminDashboard() {
           {clientes.map((cliente) => (
             <li key={cliente.user_id} className="flex justify-between bg-gray-100 p-4 rounded-lg shadow-md">
               <span>{cliente.nome} - {cliente.email}</span>
+              <button
+                onClick={() => handleBlockUser(cliente.user_id)}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg shadow-md hover:bg-red-700"
+              >
+                Bloquear
+              </button>
             </li>
           ))}
         </ul>

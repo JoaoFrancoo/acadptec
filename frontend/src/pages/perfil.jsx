@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { jwtDecode } from 'jwt-decode'; 
+import useAuth from '../components/userAuth';
 
 const PerfilUtilizador = () => {
+  useAuth();
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

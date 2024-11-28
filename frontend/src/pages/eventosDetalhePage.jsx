@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import useAuth from '../components/userAuth';
 
 function EventoDetalhesPage() {
+  useAuth()
   const { id } = useParams();
   const [evento, setEvento] = useState(null);
   const [isInscrito, setIsInscrito] = useState(false);

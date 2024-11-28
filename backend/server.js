@@ -360,6 +360,17 @@ app.put('/admin/palestrante/:id', (req, res) => {
   });
 });
 
+app.put('/admin/block/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await db.query('UPDATE login SET nivel = 0 WHERE user_id = ?', [id]);
+    res.status(200).send('Usuário bloqueado com sucesso');
+  } catch (err) {
+    res.status(500).send('Erro ao bloquear usuário');
+  }
+});
+
+
 // Iniciar o servidor
 app.listen(8081, () => {
   console.log('Servidor iniciado na porta 8081');

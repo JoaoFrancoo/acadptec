@@ -12,6 +12,7 @@ import Perfil from './pages/perfil'
 import Eventos from './pages/eventos'
 import EventoDetalhesPage from './pages/eventosDetalhePage';
 import Dashboard from './pages/dashboard';
+import Banido from './pages/banido';
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
           <Route path="/eventos" element={<Eventos />}/>
           <Route path="/eventos/:id" element={<EventoDetalhesPage />} />
           <Route path="/dashboard" element={<Dashboard />}/>
+          <Route path="/banido" element={<Banido />} />
           <Route path="/footer" element={<Footer />} />
 
         </Routes>

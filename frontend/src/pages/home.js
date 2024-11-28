@@ -1,7 +1,9 @@
 import React from 'react'
 import Footer from '../components/footer'
+import useAuth from '../components/userAuth';
 
 function Home() {
+  useAuth()
   return (
     <div className="flex flex-col items-center justify-center min-h-screen">
       <div className="w-4/6">

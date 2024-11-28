@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import useAuth from '../components/userAuth';
 
 const Patrocinadores = () => {
+  useAuth()
   const[data,setData]=useState([]);
     useEffect(()=>{
       fetch('http://localhost:8081/patrocinadores')

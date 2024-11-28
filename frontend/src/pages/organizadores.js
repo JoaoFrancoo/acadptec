@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
+import useAuth from '../components/userAuth';
 
 function Organizadores() {
+  useAuth()
   const [data, setData] = useState([]);
 
   useEffect(() => {
