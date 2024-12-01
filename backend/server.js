@@ -278,62 +278,74 @@ app.get('/eventos/:id', (req, res) => {
 // DASHBOARD SIDE
 
 // Aplicação do middleware
-app.use('/admin', authMiddleware); 
+app.use('/admin', authMiddleware);
 
-app.get('/dashboard', authMiddleware, async (req, res) => {
-  console.log('Informações do Usuário:', req.user);  // Aqui você tem acesso ao req.user com o id e nível
-
-  try {
-    // Lógica da sua rota
-    const clientes = await dbQuery('SELECT * FROM login');
-    const eventos = await dbQuery('SELECT * FROM eventos');
-    const palestrantes = await dbQuery('SELECT * FROM palestrantes');
-    const organizadores = await dbQuery('SELECT * FROM organizadores');
-    const solicitacoes = await dbQuery('SELECT * FROM solicitacoes_palestrante WHERE status = "pendente"');
-
-    res.json({
-      user: req.user,  // Incluindo o usuário na resposta para o frontend
-      clientes,
-      eventos,
-      palestrantes,
-      organizadores,
-      solicitacoes,
-    });
-  } catch (error) {
-    console.error('Erro ao buscar dados para a dashboard:', error);
-    res.status(500).json({ message: 'Erro ao buscar dados da dashboard' });
-  }
-});
-
-
+// **Clientes**
 app.get('/admin/clientes', (req, res) => {
-  console.log('Token Decodificado no backend:', req.user); // Log das informações do usuário
-
   const sql = 'SELECT * FROM login';
   db.query(sql, (err, data) => {
-    if (err) {
-      console.error('Erro ao buscar dados:', err);
-      return res.status(500).json({ message: 'Erro ao buscar dados' });
-    }
+    if (err) return res.status(500).json({ message: 'Erro ao buscar clientes' });
     res.json(data);
   });
 });
 
-// Rota para pegar todos os eventos
-app.get('/admin/eventos', (req, res) => {
-  console.log('Token Decodificado no backend:', req.user); // Log das informações do usuário
+app.put('/admin/clientes/:id', (req, res) => {
+  const clientId = req.params.id;
+  const { nome, email, nivel } = req.body;
 
-  const sql = 'SELECT * FROM eventos';
+  const sql = 'UPDATE login SET nome = ?, email = ?, nivel = ? WHERE user_id = ?';
+  db.query(sql, [nome, email, nivel, clientId], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Erro ao atualizar cliente' });
+    if (result.affectedRows === 0) return res.status(404).json({ message: 'Cliente não encontrado' });
+    res.json({ message: 'Cliente atualizado com sucesso' });
+  });
+});
+
+app.put('/admin/block/:id', (req, res) => {
+  const clientId = req.params.id;
+  const sql = 'UPDATE login SET nivel = 0 WHERE user_id = ?';
+  db.query(sql, [clientId], (err) => {
+    if (err) return res.status(500).json({ message: 'Erro ao bloquear cliente' });
+    res.json({ message: 'Cliente bloqueado com sucesso' });
+  });
+});
+
+// **Eventos**
+app.get('/admin/eventos', (req, res) => {
+  const sql = `
+    SELECT 
+      eventos.id_evento, 
+      eventos.nome, 
+      eventos.data_inicio, 
+      eventos.data_fim, 
+      categorias.descricao AS categoria_nome,
+      salas.nome_sala AS sala_nome,
+      organizadores.nome AS organizador_nome
+    FROM eventos
+    LEFT JOIN categorias ON eventos.id_categoria = categorias.id_categoria
+    LEFT JOIN salas ON eventos.id_sala = salas.id_sala
+    LEFT JOIN organizadores ON eventos.id_organizador = organizadores.id_organizador
+  `;
   db.query(sql, (err, data) => {
     if (err) return res.status(500).json({ message: 'Erro ao buscar eventos' });
     res.json(data);
   });
 });
 
-// Rota para pegar todos os palestrantes
-app.get('/admin/palestrantes', (req, res) => {
-  console.log('Token Decodificado no backend:', req.user); // Log das informações do usuário
+app.put('/admin/eventos/:id', (req, res) => {
+  const eventId = req.params.id;
+  const { nome, data_inicio, data_fim } = req.body;
 
+  const sql = 'UPDATE eventos SET nome = ?, data_inicio = ?, data_fim = ? WHERE id_evento = ?';
+  db.query(sql, [nome, data_inicio, data_fim, eventId], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Erro ao atualizar evento' });
+    if (result.affectedRows === 0) return res.status(404).json({ message: 'Evento não encontrado' });
+    res.json({ message: 'Evento atualizado com sucesso' });
+  });
+});
+
+// **Palestrantes**
+app.get('/admin/palestrantes', (req, res) => {
   const sql = 'SELECT * FROM palestrantes';
   db.query(sql, (err, data) => {
     if (err) return res.status(500).json({ message: 'Erro ao buscar palestrantes' });
@@ -341,35 +353,66 @@ app.get('/admin/palestrantes', (req, res) => {
   });
 });
 
-// Rota para atualizar o status do palestrante
-app.put('/admin/palestrante/:id', (req, res) => {
-  const { id } = req.params;
-  const { status } = req.body; // status pode ser 'aprovado' ou 'recusado'
+app.put('/admin/palestrantes/:id', (req, res) => {
+  const palestranteId = req.params.id;
+  const { nome, email } = req.body;
 
-  console.log('Token Decodificado no backend:', req.user); // Log das informações do usuário
+  const sql = 'UPDATE palestrantes SET nome = ?, email = ? WHERE id_palestrante = ?';
+  db.query(sql, [nome, email, palestranteId], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Erro ao atualizar palestrante' });
+    if (result.affectedRows === 0) return res.status(404).json({ message: 'Palestrante não encontrado' });
+    res.json({ message: 'Palestrante atualizado com sucesso' });
+  });
+});
 
-  // Verificar se o status é válido
+app.put('/admin/palestrante/:id/status', (req, res) => {
+  const palestranteId = req.params.id;
+  const { status } = req.body;
+
   if (!['aprovado', 'recusado'].includes(status)) {
     return res.status(400).json({ message: 'Status inválido' });
   }
 
-  const sql = 'UPDATE palestrantes SET status = ? WHERE id_cliente = ?';
-  db.query(sql, [status, id], (err, result) => {
+  const sql = 'UPDATE palestrantes SET status = ? WHERE id_palestrante = ?';
+  db.query(sql, [status, palestranteId], (err) => {
     if (err) return res.status(500).json({ message: 'Erro ao atualizar status do palestrante' });
-    res.json({ message: `Pedido de palestrante ${status} com sucesso.` });
+    res.json({ message: `Status do palestrante atualizado para ${status}` });
+  });
+});
+app.get('/admin/categorias', (req, res) => {
+  const sql = 'SELECT id_categoria, descricao FROM categorias';
+  db.query(sql, (err, data) => {
+    if (err) {
+      console.error('Erro ao buscar categorias:', err);
+      return res.status(500).json({ message: 'Erro ao buscar categorias' });
+    }
+    res.json(data);
   });
 });
 
-app.put('/admin/block/:id', async (req, res) => {
-  const { id } = req.params;
-  try {
-    await db.query('UPDATE login SET nivel = 0 WHERE user_id = ?', [id]);
-    res.status(200).send('Usuário bloqueado com sucesso');
-  } catch (err) {
-    res.status(500).send('Erro ao bloquear usuário');
-  }
+// Obter salas
+app.get('/admin/salas', (req, res) => {
+  const sql = 'SELECT id_sala, nome_sala, capacidade FROM salas';
+  db.query(sql, (err, data) => {
+    if (err) {
+      console.error('Erro ao buscar salas:', err);
+      return res.status(500).json({ message: 'Erro ao buscar salas' });
+    }
+    res.json(data);
+  });
 });
 
+// Obter organizadores
+app.get('/admin/organizadores', (req, res) => {
+  const sql = 'SELECT id_organizador, nome FROM organizadores';
+  db.query(sql, (err, data) => {
+    if (err) {
+      console.error('Erro ao buscar organizadores:', err);
+      return res.status(500).json({ message: 'Erro ao buscar organizadores' });
+    }
+    res.json(data);
+  });
+});
 
 // Iniciar o servidor
 app.listen(8081, () => {

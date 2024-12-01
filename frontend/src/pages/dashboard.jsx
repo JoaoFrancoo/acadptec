@@ -7,21 +7,25 @@ function AdminDashboard() {
   const [clientes, setClientes] = useState([]);
   const [eventos, setEventos] = useState([]);
   const [palestrantes, setPalestrantes] = useState([]);
+  const [categorias, setCategorias] = useState([]);
+  const [salas, setSalas] = useState([]);
+  const [organizadores, setOrganizadores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedSection, setSelectedSection] = useState('clientes');
 
   const token = localStorage.getItem('token');
-  const navigate = useNavigate();  // Hook para navegação (redirecionamento)
+  const navigate = useNavigate();
 
-  console.log('Token no componente:', token);
-
-  if (token) {
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-  }
+  const api = axios.create({
+    baseURL: 'http://localhost:8081/', // Defina o endereço base da API
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
 
   useEffect(() => {
-    console.log('Token no useEffect:', token);
-
     if (!token) {
       setError('Token não encontrado');
       setLoading(false);
@@ -31,9 +35,6 @@ function AdminDashboard() {
     let decodedToken;
     try {
       decodedToken = jwtDecode(token);
-      console.log('Token Decodificado:', decodedToken);
-
-      // Verificar se o nível do usuário é menor que 4
       if (decodedToken.nivel < 4) {
         setError('Acesso negado. Permissão insuficiente');
         setLoading(false);
@@ -46,18 +47,30 @@ function AdminDashboard() {
     }
 
     const fetchData = async () => {
+      setLoading(true);
       try {
-        const [clientesData, eventosData, palestrantesData] = await Promise.all([
-          axios.get('http://localhost:8081/admin/clientes'),
-          axios.get('http://localhost:8081/admin/eventos'),
-          axios.get('http://localhost:8081/admin/palestrantes'),
+        const [clientesData, eventosData, palestrantesData, categoriasData, salasData, organizadoresData] = await Promise.all([
+          api.get('admin/clientes'),
+          api.get('admin/eventos'),
+          api.get('admin/palestrantes'),
+          api.get('admin/categorias'),
+          api.get('admin/salas'),
+          api.get('admin/organizadores'),
         ]);
+        console.log('Clientes:', clientesData.data);
+        console.log('Eventos:', eventosData.data);
+        console.log('Palestrantes:', palestrantesData.data);
+        console.log('Categorias:', categoriasData.data);
+        console.log('Salas:', salasData.data);
+        console.log('Organizadores:', organizadoresData.data);
 
         setClientes(clientesData.data);
         setEventos(eventosData.data);
         setPalestrantes(palestrantesData.data);
+        setCategorias(categoriasData.data);
+        setSalas(salasData.data);
+        setOrganizadores(organizadoresData.data);
       } catch (err) {
-        console.error('Erro ao carregar dados:', err);
         setError('Erro ao carregar dados');
       } finally {
         setLoading(false);
@@ -67,118 +80,179 @@ function AdminDashboard() {
     fetchData();
   }, [token]);
 
-  const handleStatusChange = async (id, status) => {
+  const handleEdit = async (id, updatedData, type) => {
     try {
-      await axios.put(
-        `http://localhost:8081/admin/palestrante/${id}`,
-        { status },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      // Atualizar a lista de palestrantes após mudança de status
-      setPalestrantes((prev) =>
-        prev.map((palestrante) =>
-          palestrante.id_cliente === id ? { ...palestrante, status } : palestrante
-        )
-      );
+      const endpoint = type === 'clientes' ? 'clientes' : type === 'eventos' ? 'eventos' : 'palestrantes';
+      await api.put(`admin/${endpoint}/${id}`, updatedData);
+
+      if (type === 'clientes') {
+        setClientes((prev) => prev.map((item) => (item.user_id === id ? { ...item, ...updatedData } : item)));
+      } else if (type === 'eventos') {
+        setEventos((prev) => prev.map((item) => (item.id_evento === id ? { ...item, ...updatedData } : item)));
+      } else if (type === 'palestrantes') {
+        setPalestrantes((prev) => prev.map((item) => (item.id_palestrante === id ? { ...item, ...updatedData } : item)));
+      }
     } catch (err) {
-      setError('Erro ao atualizar status');
+      setError('Erro ao atualizar os dados');
     }
   };
 
-  // Função para bloquear o usuário
-  const handleBlockUser = async (id) => {
-    try {
-      await axios.put(
-        `http://localhost:8081/admin/block/${id}`,  // Rota para bloquear usuário
-        { nivel: 0 },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      // Atualiza o status do usuário para bloqueado (nivel 0)
-      setClientes((prev) =>
-        prev.map((cliente) =>
-          cliente.user_id === id ? { ...cliente, nivel: 0 } : cliente
-        )
-      );
-    } catch (err) {
-      setError('Erro ao bloquear usuário');
-    }
+  const handleCategoryChange = (id, newCategoryId) => {
+    const updatedEvent = { id_categoria: newCategoryId };
+    handleEdit(id, updatedEvent, 'eventos');
   };
 
-  if (loading) {
-    return <div className="text-center text-gray-500">Carregando...</div>;
-  }
+  const handleSalaChange = (id, newSalaId) => {
+    const updatedEvent = { id_sala: newSalaId };
+    handleEdit(id, updatedEvent, 'eventos');
+  };
 
-  if (error) {
-    return <div className="text-center text-red-500">{error}</div>;
-  }
+  const handleOrganizadorChange = (id, newOrganizadorId) => {
+    const updatedEvent = { id_organizador: newOrganizadorId };
+    handleEdit(id, updatedEvent, 'eventos');
+  };
+
+  const renderSection = () => {
+    if (selectedSection === 'eventos') {
+      return (
+        <div>
+          <h2 className="text-2xl font-bold mb-4">Eventos</h2>
+
+          {/* Tabela de Eventos */}
+          <table className="table-auto w-full text-left bg-white shadow rounded-md">
+            <thead>
+              <tr className="bg-gray-200">
+                <th className="px-4 py-2 border">Nome</th>
+                <th className="px-4 py-2 border">Categoria</th>
+                <th className="px-4 py-2 border">Sala</th>
+                <th className="px-4 py-2 border">Organizador</th>
+                <th className="px-4 py-2 border">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {eventos.map((evento) => (
+                <tr key={evento.id_evento} className="hover:bg-gray-50">
+                  <td className="px-4 py-2 border">{evento.nome}</td>
+
+                  {/* Categoria */}
+                  <td className="px-4 py-2 border">
+                    {categorias.length > 0 && (
+                      <select
+                        value={evento.id_categoria || ''}
+                        onChange={(e) => handleCategoryChange(evento.id_evento, e.target.value)}
+                        className="border rounded p-1 w-full"
+                      >
+                        <option value="">Selecione a Categoria</option>
+                        {categorias.map((categoria) => (
+                          <option key={categoria.id_categoria} value={categoria.id_categoria}>
+                            {categoria.descricao}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </td>
+
+                  {/* Sala */}
+                  <td className="px-4 py-2 border">
+                    {salas.length > 0 && (
+                      <select
+                        value={evento.id_sala || ''}
+                        onChange={(e) => handleSalaChange(evento.id_evento, e.target.value)}
+                        className="border rounded p-1 w-full"
+                      >
+                        <option value="">Selecione a Sala</option>
+                        {salas.map((sala) => (
+                          <option key={sala.id_sala} value={sala.id_sala}>
+                            {sala.nome_sala}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </td>
+
+                  {/* Organizador */}
+                  <td className="px-4 py-2 border">
+                    {organizadores.length > 0 && (
+                      <select
+                        value={evento.id_organizador || ''}
+                        onChange={(e) => handleOrganizadorChange(evento.id_evento, e.target.value)}
+                        className="border rounded p-1 w-full"
+                      >
+                        <option value="">Selecione o Organizador</option>
+                        {organizadores.map((organizador) => (
+                          <option key={organizador.id_organizador} value={organizador.id_organizador}>
+                            {organizador.nome}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </td>
+
+                  <td className="px-4 py-2 border space-x-2">
+                    <button
+                      onClick={() =>
+                        handleEdit(evento.id_evento, {
+                          nome: evento.nome,
+                          id_categoria: evento.id_categoria,
+                          id_sala: evento.id_sala,
+                          id_organizador: evento.id_organizador,
+                        }, 'eventos')
+                      }
+                      className="px-4 py-2 bg-blue-500 text-white rounded shadow hover:bg-blue-700"
+                    >
+                      Salvar
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+
+    return null;
+  };
 
   return (
-    <div className="container mx-auto p-6 bg-white rounded-lg shadow-lg">
-      <h1 className="text-3xl font-semibold text-center mb-6">Dashboard do Administrador</h1>
-
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold mb-4">Clientes</h2>
-        <ul className="space-y-3">
-          {clientes.map((cliente) => (
-            <li key={cliente.user_id} className="flex justify-between bg-gray-100 p-4 rounded-lg shadow-md">
-              <span>{cliente.nome} - {cliente.email}</span>
-              <button
-                onClick={() => handleBlockUser(cliente.user_id)}
-                className="px-4 py-2 bg-red-500 text-white rounded-lg shadow-md hover:bg-red-700"
-              >
-                Bloquear
-              </button>
-            </li>
-          ))}
+    <div className="flex">
+      <div className="w-1/4 bg-gray-800 text-white h-screen p-4">
+        <h2 className="text-xl font-bold mb-4">Admin Dashboard</h2>
+        <ul>
+          <li>
+            <button
+              onClick={() => setSelectedSection('clientes')}
+              className="w-full text-left py-2 px-4 hover:bg-gray-600 rounded"
+            >
+              Clientes
+            </button>
+          </li>
+          <li>
+            <button
+              onClick={() => setSelectedSection('eventos')}
+              className="w-full text-left py-2 px-4 hover:bg-gray-600 rounded"
+            >
+              Eventos
+            </button>
+          </li>
+          <li>
+            <button
+              onClick={() => setSelectedSection('palestrantes')}
+              className="w-full text-left py-2 px-4 hover:bg-gray-600 rounded"
+            >
+              Palestrantes
+            </button>
+          </li>
         </ul>
       </div>
-
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold mb-4">Eventos</h2>
-        <ul className="space-y-3">
-          {eventos.map((evento) => (
-            <li key={evento.id_evento} className="flex justify-between bg-gray-100 p-4 rounded-lg shadow-md">
-              <span>{evento.nome} - {evento.data_inicio} a {evento.data_fim}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold mb-4">Palestrantes</h2>
-        <ul className="space-y-3">
-          {palestrantes.map((palestrante) => (
-            <li key={palestrante.id_cliente} className="flex justify-between bg-gray-100 p-4 rounded-lg shadow-md">
-              <div className="flex flex-col">
-                <span>{palestrante.nome} - Status: {palestrante.status}</span>
-                {palestrante.status === 'pendente' && (
-                  <div className="mt-2 flex space-x-2">
-                    <button
-                      onClick={() => handleStatusChange(palestrante.id_cliente, 'aprovado')}
-                      className="px-4 py-2 bg-green-500 text-white rounded-lg shadow-md hover:bg-green-700"
-                    >
-                      Aprovar
-                    </button>
-                    <button
-                      onClick={() => handleStatusChange(palestrante.id_cliente, 'recusado')}
-                      className="px-4 py-2 bg-red-500 text-white rounded-lg shadow-md hover:bg-red-700"
-                    >
-                      Recusar
-                    </button>
-                  </div>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
+      <div className="w-3/4 p-8">
+        {loading ? (
+          <div>Carregando...</div>
+        ) : error ? (
+          <div className="text-red-500">{error}</div>
+        ) : (
+          renderSection()
+        )}
       </div>
     </div>
   );
