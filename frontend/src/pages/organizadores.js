@@ -22,14 +22,15 @@ function Organizadores() {
       </h1>
       <div className="overflow-x-auto bg-white shadow-md rounded-lg">
         <table className="table-auto w-full border-collapse border border-gray-300">
-          <thead>
+         <thead>
             <tr className="bg-blue-100">
-              <th className="border border-gray-300 px-4 py-2 text-304d6d-600">ID</th>
-              <th className="border border-gray-300 px-4 py-2 text-a7cced-600">Nome</th>
-              <th className="border border-gray-300 px-4 py-2 text-Uranian Blue-600">Email</th>
-              <th className="border border-gray-300 px-4 py-2 text-blue-600">Departamento</th>
+              <th className="border border-gray-300 px-4 py-2 text-black hover:text-blue-600">ID</th>
+              <th className="border border-gray-300 px-4 py-2 text-black hover:text-blue-600">Nome</th>
+              <th className="border border-gray-300 px-4 py-2 text-black hover:text-blue-600">Email</th>
+              <th className="border border-gray-300 px-4 py-2 text-black hover:text-blue-600">Departamento</th>
             </tr>
-          </thead>
+         </thead>
+
           <tbody>
             {Array.isArray(data) ? (
               data.map((d, i) => (
