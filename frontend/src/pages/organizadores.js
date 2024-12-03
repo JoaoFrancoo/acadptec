@@ -17,17 +17,17 @@ function Organizadores() {
 
   return (
     <div className="p-8 bg-gray-100 min-h-screen">
-      <h1 className="text-2xl font-bold mb-6 text-center text-gray-800">
+      <h1 className="text-4xl font-bold text-center text-blue-600 mb-6">
         Lista de Organizadores
       </h1>
-      <div className="overflow-x-auto">
-        <table className="table-auto w-full border-collapse border border-gray-300 bg-white shadow-md">
+      <div className="overflow-x-auto bg-white shadow-md rounded-lg">
+        <table className="table-auto w-full border-collapse border border-gray-300">
           <thead>
-            <tr className="bg-gray-200 text-gray-700">
-              <th className="border border-gray-300 px-4 py-2">ID</th>
-              <th className="border border-gray-300 px-4 py-2">Nome</th>
-              <th className="border border-gray-300 px-4 py-2">Email</th>
-              <th className="border border-gray-300 px-4 py-2">Departamento</th>
+            <tr className="bg-blue-100">
+              <th className="border border-gray-300 px-4 py-2 text-304d6d-600">ID</th>
+              <th className="border border-gray-300 px-4 py-2 text-a7cced-600">Nome</th>
+              <th className="border border-gray-300 px-4 py-2 text-Uranian Blue-600">Email</th>
+              <th className="border border-gray-300 px-4 py-2 text-blue-600">Departamento</th>
             </tr>
           </thead>
           <tbody>
@@ -35,9 +35,8 @@ function Organizadores() {
               data.map((d, i) => (
                 <tr
                   key={i}
-                  className={`${
-                    i % 2 === 0 ? "bg-gray-50" : "bg-white"
-                  } hover:bg-gray-100`}
+                  className={`${i % 2 === 0 ? "bg-gray-50" : "bg-white"
+                    } hover:bg-blue-50`}
                 >
                   <td className="border border-gray-300 px-4 py-2 text-center">
                     {d.id_organizador}
