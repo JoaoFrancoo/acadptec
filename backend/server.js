@@ -274,6 +274,67 @@ app.get('/eventos/:id', (req, res) => {
   });
 });
 
+// Função utilitária para formatar os logos com a URL completa
+function formatPatrocinadoresLogos(patrocinadores, req) {
+  return patrocinadores.map((p) => {
+    p.logo = `${req.protocol}://${req.get('host')}/uploads/${p.logo}`;
+    return p;
+  });
+}
+
+// Listar todos os patrocinadores
+app.get('/patrocinadores', async (req, res) => {
+  const sql = `
+    SELECT 
+      id_patrocinador, 
+      nome, 
+      logo, 
+      descricao 
+    FROM patrocinadores
+  `;
+
+  try {
+    const patrocinadores = await dbQuery(sql);
+    const patrocinadoresComLogo = formatPatrocinadoresLogos(patrocinadores, req);
+    res.json(patrocinadoresComLogo);
+  } catch (error) {
+    console.error('Erro ao buscar patrocinadores:', error);
+    res.status(500).json({ message: 'Erro ao buscar patrocinadores' });
+  }
+});
+
+// Obter detalhes de um patrocinador específico
+app.get('/patrocinadores/:id', async (req, res) => {
+  const { id } = req.params;
+
+  const sql = `
+    SELECT 
+      id_patrocinador, 
+      nome, 
+      logo, 
+      descricao 
+    FROM patrocinadores
+    WHERE id_patrocinador = ?
+  `;
+
+  try {
+    const patrocinador = await dbQuery(sql, [id]);
+
+    if (patrocinador.length === 0) {
+      return res.status(404).json({ message: 'Patrocinador não encontrado' });
+    }
+
+    // Atualizar a URL do logo do patrocinador específico
+    patrocinador[0].logo = `${req.protocol}://${req.get('host')}/uploads/${patrocinador[0].logo}`;
+    res.json(patrocinador[0]);
+  } catch (error) {
+    console.error('Erro ao buscar patrocinador:', error);
+    res.status(500).json({ message: 'Erro ao buscar patrocinador' });
+  }
+});
+
+
+
 
 // DASHBOARD SIDE
 
