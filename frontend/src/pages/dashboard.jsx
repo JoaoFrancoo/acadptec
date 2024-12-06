@@ -18,9 +18,9 @@ function AdminDashboard() {
   const navigate = useNavigate();
 
   const api = axios.create({
-    baseURL: 'http://localhost:8081/', // Defina o endereço base da API
+    baseURL: 'http://localhost:8081/',
     headers: {
-      'Authorization': `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
   });
@@ -47,9 +47,15 @@ function AdminDashboard() {
     }
 
     const fetchData = async () => {
-      setLoading(true);
       try {
-        const [clientesData, eventosData, palestrantesData, categoriasData, salasData, organizadoresData] = await Promise.all([
+        const [
+          clientesData,
+          eventosData,
+          palestrantesData,
+          categoriasData,
+          salasData,
+          organizadoresData,
+        ] = await Promise.all([
           api.get('admin/clientes'),
           api.get('admin/eventos'),
           api.get('admin/palestrantes'),
@@ -57,12 +63,6 @@ function AdminDashboard() {
           api.get('admin/salas'),
           api.get('admin/organizadores'),
         ]);
-        console.log('Clientes:', clientesData.data);
-        console.log('Eventos:', eventosData.data);
-        console.log('Palestrantes:', palestrantesData.data);
-        console.log('Categorias:', categoriasData.data);
-        console.log('Salas:', salasData.data);
-        console.log('Organizadores:', organizadoresData.data);
 
         setClientes(clientesData.data);
         setEventos(eventosData.data);
@@ -70,6 +70,7 @@ function AdminDashboard() {
         setCategorias(categoriasData.data);
         setSalas(salasData.data);
         setOrganizadores(organizadoresData.data);
+        setError(null);
       } catch (err) {
         setError('Erro ao carregar dados');
       } finally {
@@ -82,43 +83,129 @@ function AdminDashboard() {
 
   const handleEdit = async (id, updatedData, type) => {
     try {
-      const endpoint = type === 'clientes' ? 'clientes' : type === 'eventos' ? 'eventos' : 'palestrantes';
+      const endpoint =
+        type === 'clientes'
+          ? 'clientes'
+          : type === 'eventos'
+          ? 'eventos'
+          : 'palestrantes';
+
       await api.put(`admin/${endpoint}/${id}`, updatedData);
 
-      if (type === 'clientes') {
-        setClientes((prev) => prev.map((item) => (item.user_id === id ? { ...item, ...updatedData } : item)));
-      } else if (type === 'eventos') {
-        setEventos((prev) => prev.map((item) => (item.id_evento === id ? { ...item, ...updatedData } : item)));
-      } else if (type === 'palestrantes') {
-        setPalestrantes((prev) => prev.map((item) => (item.id_palestrante === id ? { ...item, ...updatedData } : item)));
-      }
+      const updateState = (stateUpdater, key) =>
+        stateUpdater((prev) =>
+          prev.map((item) => (item[key] === id ? { ...item, ...updatedData } : item))
+        );
+
+      if (type === 'clientes') updateState(setClientes, 'user_id');
+      if (type === 'eventos') updateState(setEventos, 'id_evento');
+      if (type === 'palestrantes') updateState(setPalestrantes, 'id_palestrante');
     } catch (err) {
       setError('Erro ao atualizar os dados');
     }
   };
 
+  const handleChange = (id, newValue, type, field) => {
+    const updatedData = { [field]: newValue };
+    handleEdit(id, updatedData, type);
+  };
+
   const handleCategoryChange = (id, newCategoryId) => {
-    const updatedEvent = { id_categoria: newCategoryId };
-    handleEdit(id, updatedEvent, 'eventos');
+    handleChange(id, newCategoryId, 'eventos', 'id_categoria');
   };
 
   const handleSalaChange = (id, newSalaId) => {
-    const updatedEvent = { id_sala: newSalaId };
-    handleEdit(id, updatedEvent, 'eventos');
+    handleChange(id, newSalaId, 'eventos', 'id_sala');
   };
 
   const handleOrganizadorChange = (id, newOrganizadorId) => {
-    const updatedEvent = { id_organizador: newOrganizadorId };
-    handleEdit(id, updatedEvent, 'eventos');
+    handleChange(id, newOrganizadorId, 'eventos', 'id_organizador');
   };
 
   const renderSection = () => {
+    if (selectedSection === 'clientes') {
+      return (
+        <div>
+          <h2 className="text-2xl font-bold mb-4">Clientes</h2>
+          <table className="table-auto w-full text-left bg-white shadow rounded-md">
+            <thead>
+              <tr className="bg-gray-200">
+                <th className="px-4 py-2 border">User ID</th>
+                <th className="px-4 py-2 border">Nome</th>
+                <th className="px-4 py-2 border">Email</th>
+                <th className="px-4 py-2 border">Nível</th>
+                <th className="px-4 py-2 border">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {clientes.map((cliente) => (
+                <tr key={cliente.user_id} className="hover:bg-gray-50">
+                  <td className="px-4 py-2 border">{cliente.user_id}</td>
+                  <td className="px-4 py-2 border">
+                    <input
+                      type="text"
+                      value={cliente.nome}
+                      onChange={(e) =>
+                        handleChange(cliente.user_id, e.target.value, 'clientes', 'nome')
+                      }
+                      className="border rounded p-1 w-full"
+                    />
+                  </td>
+                  <td className="px-4 py-2 border">
+                    <input
+                      type="email"
+                      value={cliente.email}
+                      onChange={(e) =>
+                        handleChange(cliente.user_id, e.target.value, 'clientes', 'email')
+                      }
+                      className="border rounded p-1 w-full"
+                    />
+                  </td>
+                  <td className="px-4 py-2 border">
+                    <input
+                      type="number"
+                      value={cliente.nivel}
+                      onChange={(e) =>
+                        handleChange(
+                          cliente.user_id,
+                          parseInt(e.target.value, 10),
+                          'clientes',
+                          'nivel'
+                        )
+                      }
+                      className="border rounded p-1 w-full"
+                    />
+                  </td>
+                  <td className="px-4 py-2 border space-x-2">
+                    <button
+                      onClick={() =>
+                        handleEdit(
+                          cliente.user_id,
+                          {
+                            nome: cliente.nome,
+                            email: cliente.email,
+                            nivel: cliente.nivel,
+                          },
+                          'clientes'
+                        )
+                      }
+                      className="px-4 py-2 bg-blue-500 text-white rounded shadow hover:bg-blue-700"
+                    >
+                      Salvar
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+
     if (selectedSection === 'eventos') {
       return (
         <div>
           <h2 className="text-2xl font-bold mb-4">Eventos</h2>
-
-          {/* Tabela de Eventos */}
           <table className="table-auto w-full text-left bg-white shadow rounded-md">
             <thead>
               <tr className="bg-gray-200">
@@ -133,70 +220,84 @@ function AdminDashboard() {
               {eventos.map((evento) => (
                 <tr key={evento.id_evento} className="hover:bg-gray-50">
                   <td className="px-4 py-2 border">{evento.nome}</td>
-
-                  {/* Categoria */}
                   <td className="px-4 py-2 border">
-                    {categorias.length > 0 && (
-                      <select
-                        value={evento.id_categoria || ''}
-                        onChange={(e) => handleCategoryChange(evento.id_evento, e.target.value)}
-                        className="border rounded p-1 w-full"
-                      >
-                        <option value="">Selecione a Categoria</option>
-                        {categorias.map((categoria) => (
-                          <option key={categoria.id_categoria} value={categoria.id_categoria}>
-                            {categoria.descricao}
-                          </option>
-                        ))}
-                      </select>
-                    )}
+                    <select
+                      value={evento.id_categoria || ''}
+                      onChange={(e) =>
+                        handleCategoryChange(
+                          evento.id_evento,
+                          parseInt(e.target.value, 10)
+                        )
+                      }
+                      className="border rounded p-1 w-full"
+                    >
+                      <option value="" disabled>
+                        {evento.categoria_nome || 'Selecione uma categoria'}
+                      </option>
+                      {categorias.map((categoria) => (
+                        <option
+                          key={categoria.id_categoria}
+                          value={categoria.id_categoria}
+                        >
+                          {categoria.descricao}
+                        </option>
+                      ))}
+                    </select>
                   </td>
-
-                  {/* Sala */}
                   <td className="px-4 py-2 border">
-                    {salas.length > 0 && (
-                      <select
-                        value={evento.id_sala || ''}
-                        onChange={(e) => handleSalaChange(evento.id_evento, e.target.value)}
-                        className="border rounded p-1 w-full"
-                      >
-                        <option value="">Selecione a Sala</option>
-                        {salas.map((sala) => (
-                          <option key={sala.id_sala} value={sala.id_sala}>
-                            {sala.nome_sala}
-                          </option>
-                        ))}
-                      </select>
-                    )}
+                    <select
+                      value={evento.id_sala || ''}
+                      onChange={(e) =>
+                        handleSalaChange(evento.id_evento, parseInt(e.target.value, 10))
+                      }
+                      className="border rounded p-1 w-full"
+                    >
+                      <option value="" disabled>
+                        {evento.sala_nome || 'Selecione uma sala'}
+                      </option>
+                      {salas.map((sala) => (
+                        <option key={sala.id_sala} value={sala.id_sala}>
+                          {sala.nome_sala}
+                        </option>
+                      ))}
+                    </select>
                   </td>
-
-                  {/* Organizador */}
                   <td className="px-4 py-2 border">
-                    {organizadores.length > 0 && (
-                      <select
-                        value={evento.id_organizador || ''}
-                        onChange={(e) => handleOrganizadorChange(evento.id_evento, e.target.value)}
-                        className="border rounded p-1 w-full"
-                      >
-                        <option value="">Selecione o Organizador</option>
-                        {organizadores.map((organizador) => (
-                          <option key={organizador.id_organizador} value={organizador.id_organizador}>
-                            {organizador.nome}
-                          </option>
-                        ))}
-                      </select>
-                    )}
+                    <select
+                      value={evento.id_organizador || ''}
+                      onChange={(e) =>
+                        handleOrganizadorChange(
+                          evento.id_evento,
+                          parseInt(e.target.value, 10)
+                        )
+                      }
+                      className="border rounded p-1 w-full"
+                    >
+                      <option value="" disabled>
+                        {evento.organizador_nome || 'Selecione um organizador'}
+                      </option>
+                      {organizadores.map((organizador) => (
+                        <option
+                          key={organizador.id_organizador}
+                          value={organizador.id_organizador}
+                        >
+                          {organizador.nome}
+                        </option>
+                      ))}
+                    </select>
                   </td>
-
-                  <td className="px-4 py-2 border space-x-2">
+                  <td className="px-4 py-2 border">
                     <button
                       onClick={() =>
-                        handleEdit(evento.id_evento, {
-                          nome: evento.nome,
-                          id_categoria: evento.id_categoria,
-                          id_sala: evento.id_sala,
-                          id_organizador: evento.id_organizador,
-                        }, 'eventos')
+                        handleEdit(
+                          evento.id_evento,
+                          {
+                            id_categoria: evento.id_categoria,
+                            id_sala: evento.id_sala,
+                            id_organizador: evento.id_organizador,
+                          },
+                          'eventos'
+                        )
                       }
                       className="px-4 py-2 bg-blue-500 text-white rounded shadow hover:bg-blue-700"
                     >
@@ -235,24 +336,12 @@ function AdminDashboard() {
               Eventos
             </button>
           </li>
-          <li>
-            <button
-              onClick={() => setSelectedSection('palestrantes')}
-              className="w-full text-left py-2 px-4 hover:bg-gray-600 rounded"
-            >
-              Palestrantes
-            </button>
-          </li>
         </ul>
       </div>
-      <div className="w-3/4 p-8">
-        {loading ? (
-          <div>Carregando...</div>
-        ) : error ? (
-          <div className="text-red-500">{error}</div>
-        ) : (
-          renderSection()
-        )}
+      <div className="w-3/4 p-6 bg-gray-100">
+        {loading && <p>Carregando...</p>}
+        {error && <p className="text-red-500">{error}</p>}
+        {renderSection()}
       </div>
     </div>
   );
