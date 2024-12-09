@@ -334,45 +334,55 @@ app.get('/patrocinadores/:id', async (req, res) => {
 });
 
 
-
-
-// DASHBOARD SIDE
-
-// Aplicação do middleware
+// DASHBOARD SIDE - Rotas do Administrador
 app.use('/admin', authMiddleware);
 
 // **Clientes**
-app.get('/admin/clientes', (req, res) => {
-  const sql = 'SELECT * FROM login';
-  db.query(sql, (err, data) => {
-    if (err) return res.status(500).json({ message: 'Erro ao buscar clientes' });
-    res.json(data);
-  });
+app.get('/admin/clientes', async (req, res) => {
+  try {
+    const clientes = await dbQuery('SELECT * FROM login');
+    res.json(clientes);
+  } catch (err) {
+    console.error('Erro ao buscar clientes:', err);
+    res.status(500).json({ message: 'Erro ao buscar clientes' });
+  }
 });
 
-app.put('/admin/clientes/:id', (req, res) => {
+app.put('/admin/clientes/:id', async (req, res) => {
   const clientId = req.params.id;
   const { nome, email, nivel } = req.body;
 
-  const sql = 'UPDATE login SET nome = ?, email = ?, nivel = ? WHERE user_id = ?';
-  db.query(sql, [nome, email, nivel, clientId], (err, result) => {
-    if (err) return res.status(500).json({ message: 'Erro ao atualizar cliente' });
-    if (result.affectedRows === 0) return res.status(404).json({ message: 'Cliente não encontrado' });
+  try {
+    const result = await dbQuery(
+      'UPDATE login SET nome = ?, email = ?, nivel = ? WHERE user_id = ?',
+      [nome, email, nivel, clientId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Cliente não encontrado' });
+    }
+
     res.json({ message: 'Cliente atualizado com sucesso' });
-  });
+  } catch (err) {
+    console.error('Erro ao atualizar cliente:', err);
+    res.status(500).json({ message: 'Erro ao atualizar cliente' });
+  }
 });
 
-app.put('/admin/block/:id', (req, res) => {
+app.put('/admin/block/:id', async (req, res) => {
   const clientId = req.params.id;
-  const sql = 'UPDATE login SET nivel = 0 WHERE user_id = ?';
-  db.query(sql, [clientId], (err) => {
-    if (err) return res.status(500).json({ message: 'Erro ao bloquear cliente' });
+
+  try {
+    await dbQuery('UPDATE login SET nivel = 0 WHERE user_id = ?', [clientId]);
     res.json({ message: 'Cliente bloqueado com sucesso' });
-  });
+  } catch (err) {
+    console.error('Erro ao bloquear cliente:', err);
+    res.status(500).json({ message: 'Erro ao bloquear cliente' });
+  }
 });
 
 // **Eventos**
-app.get('/admin/eventos', (req, res) => {
+app.get('/admin/eventos', async (req, res) => {
   const sql = `
     SELECT 
       eventos.id_evento, 
@@ -385,48 +395,72 @@ app.get('/admin/eventos', (req, res) => {
     FROM eventos
     LEFT JOIN categorias ON eventos.id_categoria = categorias.id_categoria
     LEFT JOIN salas ON eventos.id_sala = salas.id_sala
-    LEFT JOIN organizadores ON eventos.id_organizador = organizadores.id_organizador
+    LEFT JOIN organizadores ON eventos.id_organizador = organizadores.id_organizador;
   `;
-  db.query(sql, (err, data) => {
-    if (err) return res.status(500).json({ message: 'Erro ao buscar eventos' });
-    res.json(data);
-  });
+
+  try {
+    const eventos = await dbQuery(sql);
+    res.json(eventos);
+  } catch (err) {
+    console.error('Erro ao buscar eventos:', err);
+    res.status(500).json({ message: 'Erro ao buscar eventos' });
+  }
 });
 
-app.put('/admin/eventos/:id', (req, res) => {
+app.put('/admin/eventos/:id', async (req, res) => {
   const eventId = req.params.id;
   const { nome, data_inicio, data_fim } = req.body;
 
-  const sql = 'UPDATE eventos SET nome = ?, data_inicio = ?, data_fim = ? WHERE id_evento = ?';
-  db.query(sql, [nome, data_inicio, data_fim, eventId], (err, result) => {
-    if (err) return res.status(500).json({ message: 'Erro ao atualizar evento' });
-    if (result.affectedRows === 0) return res.status(404).json({ message: 'Evento não encontrado' });
+  try {
+    const result = await dbQuery(
+      'UPDATE eventos SET nome = ?, data_inicio = ?, data_fim = ? WHERE id_evento = ?',
+      [nome, data_inicio, data_fim, eventId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Evento não encontrado' });
+    }
+
     res.json({ message: 'Evento atualizado com sucesso' });
-  });
+  } catch (err) {
+    console.error('Erro ao atualizar evento:', err);
+    res.status(500).json({ message: 'Erro ao atualizar evento' });
+  }
 });
 
 // **Palestrantes**
-app.get('/admin/palestrantes', (req, res) => {
-  const sql = 'SELECT * FROM palestrantes';
-  db.query(sql, (err, data) => {
-    if (err) return res.status(500).json({ message: 'Erro ao buscar palestrantes' });
-    res.json(data);
-  });
+app.get('/admin/palestrantes', async (req, res) => {
+  try {
+    const palestrantes = await dbQuery('SELECT * FROM palestrantes');
+    res.json(palestrantes);
+  } catch (err) {
+    console.error('Erro ao buscar palestrantes:', err);
+    res.status(500).json({ message: 'Erro ao buscar palestrantes' });
+  }
 });
 
-app.put('/admin/palestrantes/:id', (req, res) => {
+app.put('/admin/palestrantes/:id', async (req, res) => {
   const palestranteId = req.params.id;
   const { nome, email } = req.body;
 
-  const sql = 'UPDATE palestrantes SET nome = ?, email = ? WHERE id_palestrante = ?';
-  db.query(sql, [nome, email, palestranteId], (err, result) => {
-    if (err) return res.status(500).json({ message: 'Erro ao atualizar palestrante' });
-    if (result.affectedRows === 0) return res.status(404).json({ message: 'Palestrante não encontrado' });
+  try {
+    const result = await dbQuery(
+      'UPDATE palestrantes SET nome = ?, email = ? WHERE id_palestrante = ?',
+      [nome, email, palestranteId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Palestrante não encontrado' });
+    }
+
     res.json({ message: 'Palestrante atualizado com sucesso' });
-  });
+  } catch (err) {
+    console.error('Erro ao atualizar palestrante:', err);
+    res.status(500).json({ message: 'Erro ao atualizar palestrante' });
+  }
 });
 
-app.put('/admin/palestrante/:id/status', (req, res) => {
+app.put('/admin/palestrante/:id/status', async (req, res) => {
   const palestranteId = req.params.id;
   const { status } = req.body;
 
@@ -434,45 +468,62 @@ app.put('/admin/palestrante/:id/status', (req, res) => {
     return res.status(400).json({ message: 'Status inválido' });
   }
 
-  const sql = 'UPDATE palestrantes SET status = ? WHERE id_palestrante = ?';
-  db.query(sql, [status, palestranteId], (err) => {
-    if (err) return res.status(500).json({ message: 'Erro ao atualizar status do palestrante' });
+  try {
+    await dbQuery('UPDATE palestrantes SET status = ? WHERE id_palestrante = ?', [status, palestranteId]);
     res.json({ message: `Status do palestrante atualizado para ${status}` });
-  });
+  } catch (err) {
+    console.error('Erro ao atualizar status do palestrante:', err);
+    res.status(500).json({ message: 'Erro ao atualizar status do palestrante' });
+  }
 });
-app.get('/admin/categorias', (req, res) => {
-  const sql = 'SELECT id_categoria, descricao FROM categorias';
-  db.query(sql, (err, data) => {
+
+// **Categorias**
+app.get('/admin/categorias', async (req, res) => {
+  try {
+    const categorias = await dbQuery('SELECT id_categoria, descricao FROM categorias');
+    res.json(categorias);
+  } catch (err) {
+    console.error('Erro ao buscar categorias:', err);
+    res.status(500).json({ message: 'Erro ao buscar categorias' });
+  }
+});
+
+// **Salas**
+app.get('/admin/salas', async (req, res) => {
+  try {
+    const salas = await dbQuery('SELECT id_sala, nome_sala, capacidade FROM salas');
+    res.json(salas);
+  } catch (err) {
+    console.error('Erro ao buscar salas:', err);
+    res.status(500).json({ message: 'Erro ao buscar salas' });
+  }
+});
+
+app.get('/admin/salas/:id', (req, res) => {
+  const { id } = req.params;
+
+  const sql = 'SELECT id_sala, nome_sala, capacidade FROM salas WHERE id_sala = ?';
+  db.query(sql, [id], (err, data) => {
     if (err) {
-      console.error('Erro ao buscar categorias:', err);
-      return res.status(500).json({ message: 'Erro ao buscar categorias' });
+      console.error('Erro ao buscar sala:', err);
+      return res.status(500).json({ message: 'Erro ao buscar sala' });
     }
-    res.json(data);
+    if (data.length === 0) {
+      return res.status(404).json({ message: 'Sala não encontrada' });
+    }
+    res.json(data[0]);
   });
 });
 
-// Obter salas
-app.get('/admin/salas', (req, res) => {
-  const sql = 'SELECT id_sala, nome_sala, capacidade FROM salas';
-  db.query(sql, (err, data) => {
-    if (err) {
-      console.error('Erro ao buscar salas:', err);
-      return res.status(500).json({ message: 'Erro ao buscar salas' });
-    }
-    res.json(data);
-  });
-});
-
-// Obter organizadores
-app.get('/admin/organizadores', (req, res) => {
-  const sql = 'SELECT id_organizador, nome FROM organizadores';
-  db.query(sql, (err, data) => {
-    if (err) {
-      console.error('Erro ao buscar organizadores:', err);
-      return res.status(500).json({ message: 'Erro ao buscar organizadores' });
-    }
-    res.json(data);
-  });
+// **Organizadores**
+app.get('/admin/organizadores', async (req, res) => {
+  try {
+    const organizadores = await dbQuery('SELECT id_organizador, nome FROM organizadores');
+    res.json(organizadores);
+  } catch (err) {
+    console.error('Erro ao buscar organizadores:', err);
+    res.status(500).json({ message: 'Erro ao buscar organizadores' });
+  }
 });
 
 // Iniciar o servidor
