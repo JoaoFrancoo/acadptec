@@ -226,7 +226,7 @@ app.post('/login', async (req, res) => {
 });
 
 // Obter detalhes do usuário logado
-app.get('/user/me/details', authMiddleware, (req, res) => {
+app.get('/user/me/details/', authMiddleware, (req, res) => {
   const userId = req.id_cliente;
 
   const sqlUser = 'SELECT user_id, foto, email, nome FROM login WHERE user_id = ?';

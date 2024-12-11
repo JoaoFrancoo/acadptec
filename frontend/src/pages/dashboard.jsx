@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import {jwtDecode } from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
 import { useNavigate } from 'react-router-dom';
 
 function AdminDashboard() {
@@ -85,6 +85,22 @@ function AdminDashboard() {
     }
   };
 
+  const handleInputChange = (e, item, section) => {
+    const { name, value } = e.target;
+    const updatedItem = { ...item, [name]: value };
+    setEventos((prevEventos) =>
+      prevEventos.map((evento) =>
+        evento.id_evento === item.id_evento ? updatedItem : evento
+      )
+    );
+  };
+
+  const formatDate = (date) => {
+    if (!date) return '';
+    const newDate = new Date(date);
+    return newDate.toISOString().slice(0, 16);
+  };
+
   const renderEditableRow = (item, section) => {
     const idField =
       section === 'clientes'
@@ -101,18 +117,73 @@ function AdminDashboard() {
 
     return (
       <tr key={item[idField]}>
-        {Object.keys(item).map((key) => (
-          <td key={key}>
-            <input
-              type="text"
-              value={item[key] || ''}
-              onChange={(e) =>
-                handleEdit(item[idField], { [key]: e.target.value }, section)
-              }
-              className="border rounded p-1 w-full"
-            />
-          </td>
-        ))}
+        {Object.keys(item).map((key) => {
+          if (key.includes('id')) return null;
+          if (key === 'data_inicio' || key === 'data_fim') {
+            return (
+              <td key={key}>
+                <input
+                  type="datetime-local"
+                  name={key}
+                  value={formatDate(item[key])}
+                  onChange={(e) => handleInputChange(e, item, section)}
+                  className="border rounded p-1 w-full"
+                />
+              </td>
+            );
+          }
+
+          if (section === 'eventos' && (key === 'categoria_nome' || key === 'sala_nome' || key === 'organizador_nome')) {
+            let options = [];
+            let selectedValue = item[key] || '';
+
+            if (key === 'categoria_nome') {
+              options = categorias;
+            } else if (key === 'sala_nome') {
+              options = salas;
+            } else if (key === 'organizador_nome') {
+              options = organizadores;
+            }
+
+            return (
+              <td key={key}>
+                <select
+                  name={key}
+                  value={item[key] || ''}
+                  onChange={(e) => handleInputChange(e, item, section)}
+                  className="border rounded p-1 w-full"
+                >
+                  <option value="">Selecione...</option>
+                  {options.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.nome || option.descricao}
+                    </option>
+                  ))}
+                </select>
+              </td>
+            );
+          }
+
+          return (
+            <td key={key}>
+              <input
+                type="text"
+                name={key}
+                value={item[key] || ''}
+                onChange={(e) => handleInputChange(e, item, section)}
+                className="border rounded p-1 w-full"
+              />
+            </td>
+          );
+        })}
+        <td>
+          <button
+            onClick={() => handleEdit(item[idField], item, section)}
+            className="px-4 py-2 bg-blue-500 text-white rounded shadow hover:bg-blue-700"
+          >
+            Salvar
+          </button>
+        </td>
       </tr>
     );
   };
@@ -134,11 +205,18 @@ function AdminDashboard() {
           <thead>
             <tr className="bg-gray-200">
               {sectionData.length > 0 &&
-                Object.keys(sectionData[0]).map((key) => (
-                  <th key={key} className="px-4 py-2 border">
-                    {key}
-                  </th>
-                ))}
+                Object.keys(sectionData[0]).map((key) => {
+
+                  if (key.includes('id')) return null;
+                  if(key.includes('password')) return null;
+
+                  return (
+                    <th key={key} className="px-4 py-2 border">
+                      {key.replace('_', ' ').toUpperCase()}
+                    </th>
+                  );
+                })}
+              <th className="px-4 py-2 border">Ações</th>
             </tr>
           </thead>
           <tbody>
