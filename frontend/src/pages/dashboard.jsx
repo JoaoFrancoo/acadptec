@@ -66,7 +66,7 @@ function AdminDashboard() {
       setOrganizadores(organizadoresRes.data);
       setError(null);
     } catch (err) {
-      setError('Erro ao carregar os dados.');
+      setError('Erro ao carregar os');
     } finally {
       setLoading(false);
     }
