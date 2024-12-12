@@ -226,7 +226,7 @@ app.post('/login', async (req, res) => {
 });
 
 // Obter detalhes do usuário logado
-app.get('/user/me/details/', authMiddleware, (req, res) => {
+app.get('/user/me/details', authMiddleware, (req, res) => {
   const userId = req.id_cliente;
 
   const sqlUser = 'SELECT user_id, foto, email, nome FROM login WHERE user_id = ?';
@@ -253,7 +253,30 @@ app.get('/user/me/details/', authMiddleware, (req, res) => {
     });
   });
 });
+// Atualizar detalhes do usuário logado
+app.put('/user/me/update', authMiddleware, (req, res) => {
+  const userId = req.id_cliente;
+  const { nome, email, foto } = req.body;
 
+  if (!nome || !email) {
+    return res.status(400).json({ message: 'Nome e email são obrigatórios.' });
+  }
+
+  const sqlUpdate = `
+    UPDATE login 
+    SET nome = ?, email = ?, foto = ? 
+    WHERE user_id = ?`;
+
+  db.query(sqlUpdate, [nome, email, foto || null, userId], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Erro ao atualizar os dados do utilizador.' });
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Utilizador não encontrado.' });
+    }
+
+    res.json({ message: 'Dados atualizados com sucesso!' });
+  });
+});
 // Obter detalhes de um evento específico
 app.get('/eventos/:id', (req, res) => {
   const { id } = req.params;

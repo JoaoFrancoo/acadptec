@@ -13,6 +13,7 @@ import Eventos from './pages/eventos'
 import EventoDetalhesPage from './pages/eventosDetalhePage';
 import Dashboard from './pages/dashboard';
 import Banido from './pages/banido';
+import EditarPerfil from './pages/editarPerfil';
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />}/>
           <Route path="/banido" element={<Banido />} />
           <Route path="/footer" element={<Footer />} />
+          <Route path="/editarPerfil" element={<EditarPerfil />} />
 
         </Routes>
       </ErrorBoundary>
