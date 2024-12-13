@@ -229,23 +229,28 @@ function AdminDashboard() {
 
   return (
     <div className="flex">
-      <div className="w-1/4 bg-gray-800 text-white h-screen p-4">
-        <h2 className="text-xl font-bold mb-4">Admin Dashboard</h2>
-        <ul>
-          {['clientes', 'eventos', 'palestrantes', 'categorias', 'salas', 'organizadores'].map(
-            (section) => (
-              <li key={section}>
-                <button
-                  onClick={() => setSelectedSection(section)}
-                  className="w-full text-left py-2 px-4 hover:bg-gray-600 rounded"
-                >
+      {/* Barra Lateral */}
+      <div className="relative group bg-gray-800 text-white h-screen w-16 p-4 overflow-hidden transition-width duration-300 ease-in-out hover:w-64">
+        <h2 className="text-xl font-bold mb-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out">
+          Admin Dashboard
+        </h2>
+        <ul className="space-y-4 mt-8">
+          {['clientes', 'eventos', 'palestrantes', 'categorias', 'salas', 'organizadores'].map((section) => (
+            <li key={section}>
+              <button
+                onClick={() => setSelectedSection(section)}
+                className="w-full text-left py-2 px-4 hover:bg-gray-600 rounded transition-all duration-300 ease-in-out">
+                {/* Texto só aparece quando a barra está expandida */}
+                <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out">
                   {section.charAt(0).toUpperCase() + section.slice(1)}
-                </button>
-              </li>
-            )
-          )}
+                </span>
+              </button>
+            </li>
+          ))}
         </ul>
       </div>
+      
+      {/* Conteúdo Principal */}
       <div className="w-3/4 p-6 bg-gray-100">
         {loading && <p>Carregando...</p>}
         {error && <p className="text-red-500">{error}</p>}
@@ -253,6 +258,6 @@ function AdminDashboard() {
       </div>
     </div>
   );
-}
+  }
 
 export default AdminDashboard;
