@@ -254,9 +254,10 @@ app.get('/user/me/details', authMiddleware, (req, res) => {
   });
 });
 // Atualizar detalhes do usuário logado
-app.put('/user/me/update', authMiddleware, (req, res) => {
+app.put('/user/me/update', authMiddleware, upload.single('foto'), (req, res) => {
   const userId = req.id_cliente;
-  const { nome, email, foto } = req.body;
+  const { nome, email } = req.body;
+  const foto = req.file ? req.file.filename : null;
 
   if (!nome || !email) {
     return res.status(400).json({ message: 'Nome e email são obrigatórios.' });
