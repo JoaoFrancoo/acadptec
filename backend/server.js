@@ -433,12 +433,46 @@ app.get('/admin/eventos', async (req, res) => {
 
 app.put('/admin/eventos/:id', async (req, res) => {
   const eventId = req.params.id;
-  const { nome, data_inicio, data_fim } = req.body;
+  let { nome, data_inicio, data_fim, id_categoria, id_sala, id_organizador } = req.body;
 
   try {
+    // Verificar se os valores são nulos e, se forem, manter os valores antigos no banco de dados
+    const eventoAntigo = await dbQuery('SELECT * FROM eventos WHERE id_evento = ?', [eventId]);
+
+    if (!eventoAntigo || eventoAntigo.length === 0) {
+      return res.status(404).json({ message: 'Evento não encontrado' });
+    }
+
+    // Se id_categoria for nulo ou vazio, mantemos o valor antigo
+    if (!id_categoria) {
+      id_categoria = eventoAntigo[0].id_categoria;
+    }
+
+    // Se id_sala for nulo ou vazio, mantemos o valor antigo
+    if (!id_sala) {
+      id_sala = eventoAntigo[0].id_sala;
+    }
+
+    // Se id_organizador for nulo ou vazio, mantemos o valor antigo
+    if (!id_organizador) {
+      id_organizador = eventoAntigo[0].id_organizador;
+    }
+
+    console.log('Dados recebidos do frontend:', {
+      nome,
+      data_inicio,
+      data_fim,
+      id_categoria,
+      id_sala,
+      id_organizador,
+    });
+
+    // Executar a atualização no banco de dados com os valores ajustados
     const result = await dbQuery(
-      'UPDATE eventos SET nome = ?, data_inicio = ?, data_fim = ? WHERE id_evento = ?',
-      [nome, data_inicio, data_fim, eventId]
+      `UPDATE eventos 
+       SET nome = ?, data_inicio = ?, data_fim = ?, id_categoria = ?, id_sala = ?, id_organizador = ? 
+       WHERE id_evento = ?`,
+      [nome, data_inicio, data_fim, id_categoria, id_sala, id_organizador, eventId]
     );
 
     if (result.affectedRows === 0) {
@@ -451,6 +485,8 @@ app.put('/admin/eventos/:id', async (req, res) => {
     res.status(500).json({ message: 'Erro ao atualizar evento' });
   }
 });
+
+
 
 // **Palestrantes**
 app.get('/admin/palestrantes', async (req, res) => {

@@ -66,7 +66,7 @@ function AdminDashboard() {
       setOrganizadores(organizadoresRes.data);
       setError(null);
     } catch (err) {
-      setError('Erro ao carregar os');
+      setError('Erro ao carregar os dados');
     } finally {
       setLoading(false);
     }
@@ -87,12 +87,50 @@ function AdminDashboard() {
 
   const handleInputChange = (e, item, section) => {
     const { name, value } = e.target;
+
+    // Atualizar o item com o valor alterado
     const updatedItem = { ...item, [name]: value };
-    setEventos((prevEventos) =>
-      prevEventos.map((evento) =>
-        evento.id_evento === item.id_evento ? updatedItem : evento
-      )
-    );
+
+    // Atualizar o estado correspondente
+    switch (section) {
+      case 'eventos':
+        setEventos((prevEventos) =>
+          prevEventos.map((evento) =>
+            evento.id_evento === item.id_evento ? updatedItem : evento
+          )
+        );
+        break;
+      case 'clientes':
+        setClientes((prevClientes) =>
+          prevClientes.map((cliente) =>
+            cliente.user_id === item.user_id ? updatedItem : cliente
+          )
+        );
+        break;
+      case 'categorias':
+        setCategorias((prevCategorias) =>
+          prevCategorias.map((categoria) =>
+            categoria.id_categoria === item.id_categoria ? updatedItem : categoria
+          )
+        );
+        break;
+      case 'salas':
+        setSalas((prevSalas) =>
+          prevSalas.map((sala) =>
+            sala.id_sala === item.id_sala ? updatedItem : sala
+          )
+        );
+        break;
+      case 'organizadores':
+        setOrganizadores((prevOrganizadores) =>
+          prevOrganizadores.map((organizador) =>
+            organizador.id_organizador === item.id_organizador ? updatedItem : organizador
+          )
+        );
+        break;
+      default:
+        break;
+    }
   };
 
   const formatDate = (date) => {
@@ -133,35 +171,101 @@ function AdminDashboard() {
             );
           }
 
-          if (section === 'eventos' && (key === 'categoria_nome' || key === 'sala_nome' || key === 'organizador_nome')) {
-            let options = [];
-            let selectedValue = item[key] || '';
-
+          if (section === 'eventos') {
             if (key === 'categoria_nome') {
-              options = categorias;
-            } else if (key === 'sala_nome') {
-              options = salas;
-            } else if (key === 'organizador_nome') {
-              options = organizadores;
+              return (
+                <td key={key}>
+                  <select
+                    name="id_categoria"
+                    value={item.id_categoria || ''}
+                    onChange={(e) => {
+                      const categoriaId = parseInt(e.target.value, 10);  // Converta para número
+                      const categoria = categorias.find(
+                        (categoria) => categoria.id_categoria === categoriaId
+                      );
+                      const updatedItem = {
+                        ...item,
+                        id_categoria: categoriaId,  // Armazene o ID numérico
+                        categoria_nome: categoria ? categoria.descricao : item.categoria_nome,
+                      };
+                      handleInputChange(e, updatedItem, section);
+                    }}
+                    className="border rounded p-1 w-full"
+                  >
+                    <option value={item.id_categoria || ''}>
+                      {item.categoria_nome || 'Selecione...'}
+                    </option>
+                    {categorias.map((categoria) => (
+                      <option key={categoria.id_categoria} value={categoria.id_categoria}>
+                        {categoria.descricao}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+              );
             }
 
-            return (
-              <td key={key}>
-                <select
-                  name={key}
-                  value={item[key] || ''}
-                  onChange={(e) => handleInputChange(e, item, section)}
-                  className="border rounded p-1 w-full"
-                >
-                  <option value="">Selecione...</option>
-                  {options.map((option) => (
-                    <option key={option.id} value={option.id}>
-                      {option.nome || option.descricao}
+            if (key === 'sala_nome') {
+              return (
+                <td key={key}>
+                  <select
+                    name="id_sala"
+                    value={item.id_sala || ''}
+                    onChange={(e) => {
+                      const sala = salas.find((sala) => sala.id_sala === e.target.value);
+                      const updatedItem = {
+                        ...item,
+                        id_sala: e.target.value,
+                        sala_nome: sala ? sala.nome_sala : item.sala_nome,
+                      };
+                      handleInputChange(e, updatedItem, section);
+                    }}
+                    className="border rounded p-1 w-full"
+                  >
+                    <option value={item.id_sala || ''}>
+                      {item.sala_nome || 'Selecione...'}
                     </option>
-                  ))}
-                </select>
-              </td>
-            );
+                    {salas.map((sala) => (
+                      <option key={sala.id_sala} value={sala.id_sala}>
+                        {sala.nome_sala}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+              );
+            }
+
+            if (key === 'organizador_nome') {
+              return (
+                <td key={key}>
+                  <select
+                    name="id_organizador"
+                    value={item.id_organizador || ''}
+                    onChange={(e) => {
+                      const organizador = organizadores.find(
+                        (organizador) => organizador.id_organizador === e.target.value
+                      );
+                      const updatedItem = {
+                        ...item,
+                        id_organizador: e.target.value,
+                        organizador_nome: organizador ? organizador.nome : item.organizador_nome,
+                      };
+                      handleInputChange(e, updatedItem, section);
+                    }}
+                    className="border rounded p-1 w-full"
+                  >
+                    <option value={item.id_organizador || ''}>
+                      {item.organizador_nome || 'Selecione...'}
+                    </option>
+                    {organizadores.map((organizador) => (
+                      <option key={organizador.id_organizador} value={organizador.id_organizador}>
+                        {organizador.nome}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+              );
+            }
           }
 
           return (
@@ -197,67 +301,50 @@ function AdminDashboard() {
       salas,
       organizadores,
     };
-    const sectionData = dataMap[selectedSection] || [];
+
+    const data = dataMap[selectedSection];
+
     return (
-      <div>
-        <h2 className="text-2xl font-bold mb-4 capitalize">{selectedSection}</h2>
-        <table className="table-auto w-full text-left bg-white shadow rounded-md">
-          <thead>
-            <tr className="bg-gray-200">
-              {sectionData.length > 0 &&
-                Object.keys(sectionData[0]).map((key) => {
-
-                  if (key.includes('id')) return null;
-                  if(key.includes('password')) return null;
-
-                  return (
-                    <th key={key} className="px-4 py-2 border">
-                      {key.replace('_', ' ').toUpperCase()}
-                    </th>
-                  );
-                })}
-              <th className="px-4 py-2 border">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sectionData.map((item) => renderEditableRow(item, selectedSection))}
-          </tbody>
-        </table>
-      </div>
+      <table className="min-w-full border-collapse">
+        <thead>
+          <tr>
+            {Object.keys(data[0] || {}).map((key) => (
+              <th key={key} className="border p-2 text-left">
+                {key}
+              </th>
+            ))}
+            <th className="border p-2 text-left">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((item) => renderEditableRow(item, selectedSection))}
+        </tbody>
+      </table>
     );
   };
 
+  if (loading) return <div>Carregando...</div>;
+  if (error) return <div>{error}</div>;
+
   return (
-    <div className="flex">
-      {/* Barra Lateral */}
-      <div className="relative group bg-gray-800 text-white h-screen w-16 p-4 overflow-hidden transition-width duration-300 ease-in-out hover:w-64">
-        <h2 className="text-xl font-bold mb-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out">
-          Admin Dashboard
-        </h2>
-        <ul className="space-y-4 mt-8">
-          {['clientes', 'eventos', 'palestrantes', 'categorias', 'salas', 'organizadores'].map((section) => (
-            <li key={section}>
-              <button
-                onClick={() => setSelectedSection(section)}
-                className="w-full text-left py-2 px-4 hover:bg-gray-600 rounded transition-all duration-300 ease-in-out">
-                {/* Texto só aparece quando a barra está expandida */}
-                <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out">
-                  {section.charAt(0).toUpperCase() + section.slice(1)}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
+    <div>
+      <h1>Dashboard Admin</h1>
+      <div className="my-4">
+        <select
+          onChange={(e) => setSelectedSection(e.target.value)}
+          className="border rounded p-1"
+        >
+          <option value="clientes">Clientes</option>
+          <option value="eventos">Eventos</option>
+          <option value="palestrantes">Palestrantes</option>
+          <option value="categorias">Categorias</option>
+          <option value="salas">Salas</option>
+          <option value="organizadores">Organizadores</option>
+        </select>
       </div>
-      
-      {/* Conteúdo Principal */}
-      <div className="w-3/4 p-6 bg-gray-100">
-        {loading && <p>Carregando...</p>}
-        {error && <p className="text-red-500">{error}</p>}
-        {renderSection()}
-      </div>
+      {renderSection()}
     </div>
   );
-  }
+}
 
 export default AdminDashboard;
