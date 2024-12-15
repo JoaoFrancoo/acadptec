@@ -87,8 +87,6 @@ function AdminDashboard() {
 
   const handleInputChange = (e, item, section) => {
     const { name, value } = e.target;
-
-    // Atualizar o item com o valor alterado
     const updatedItem = { ...item, [name]: value };
 
     // Atualizar o estado correspondente
@@ -283,7 +281,7 @@ function AdminDashboard() {
         <td>
           <button
             onClick={() => handleEdit(item[idField], item, section)}
-            className="px-4 py-2 bg-blue-500 text-white rounded shadow hover:bg-blue-700"
+            className="px-4 py-2 bg-slate-400 text-white rounded shadow hover:bg-blue-300"
           >
             Salvar
           </button>
@@ -327,22 +325,34 @@ function AdminDashboard() {
   if (error) return <div>{error}</div>;
 
   return (
-    <div>
-      <h1>Dashboard Admin</h1>
-      <div className="my-4">
-        <select
-          onChange={(e) => setSelectedSection(e.target.value)}
-          className="border rounded p-1"
-        >
-          <option value="clientes">Clientes</option>
-          <option value="eventos">Eventos</option>
-          <option value="palestrantes">Palestrantes</option>
-          <option value="categorias">Categorias</option>
-          <option value="salas">Salas</option>
-          <option value="organizadores">Organizadores</option>
-        </select>
+    <div className="flex">
+      {/* Barra Lateral */}
+      <div className="relative group bg-slate-500 text-white h-screen w-16 p-4 overflow-hidden transition-width duration-300 ease-in-out hover:w-64">
+        <h2 className="text-xl font-bold mb-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out">
+          Admin Dashboard
+        </h2>
+        <ul className="space-y-4 mt-8">
+          {['clientes', 'eventos', 'palestrantes', 'categorias', 'salas', 'organizadores'].map((section) => (
+            <li key={section}>
+              <button
+                onClick={() => setSelectedSection(section)}
+                className="w-full text-left py-2 px-4 hover:bg-gray-600 rounded transition-all duration-300 ease-in-out">
+                {/* Texto só aparece quando a barra está expandida */}
+                <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out">
+                  {section.charAt(0).toUpperCase() + section.slice(1)}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
       </div>
-      {renderSection()}
+      
+      {/* Conteúdo Principal */}
+      <div className="w-3/4 p-6 bg-gray-100">
+        {loading && <p>Carregando...</p>}
+        {error && <p className="text-red-500">{error}</p>}
+        {renderSection()}
+      </div>
     </div>
   );
 }
