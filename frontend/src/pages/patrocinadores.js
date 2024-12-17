@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import useAuth from '../components/userAuth'; 
 
 const Patrocinadores = () => {
+  useAuth();
   const [patrocinadores, setPatrocinadores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
