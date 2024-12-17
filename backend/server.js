@@ -301,7 +301,7 @@ app.get('/eventos/:id', (req, res) => {
 // Função utilitária para formatar os logos com a URL completa
 function formatPatrocinadoresLogos(patrocinadores, req) {
   return patrocinadores.map((p) => {
-    p.logo = `${req.protocol}://${req.get('host')}/uploads/${p.logo}`;
+    p.logo = `${req.protocol}://${req.get('host')}/imagens/${p.logo}`;
     return p;
   });
 }
@@ -310,8 +310,9 @@ function formatPatrocinadoresLogos(patrocinadores, req) {
 app.get('/patrocinadores', async (req, res) => {
   const sql = `
     SELECT 
-      id_patrocinador, 
+      id, 
       nome, 
+      contacto,
       logo, 
       descricao 
     FROM patrocinadores
@@ -333,8 +334,9 @@ app.get('/patrocinadores/:id', async (req, res) => {
 
   const sql = `
     SELECT 
-      id_patrocinador, 
+      id, 
       nome, 
+      contacto,
       logo, 
       descricao 
     FROM patrocinadores
@@ -349,7 +351,7 @@ app.get('/patrocinadores/:id', async (req, res) => {
     }
 
     // Atualizar a URL do logo do patrocinador específico
-    patrocinador[0].logo = `${req.protocol}://${req.get('host')}/uploads/${patrocinador[0].logo}`;
+    patrocinador[0].logo = `${req.protocol}://${req.get('host')}/imagens/${patrocinador[0].logo}`;
     res.json(patrocinador[0]);
   } catch (error) {
     console.error('Erro ao buscar patrocinador:', error);

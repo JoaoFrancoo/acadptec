@@ -1,58 +1,48 @@
 import React, { useEffect, useState } from 'react';
-import useAuth from '../components/userAuth';
 
 const Patrocinadores = () => {
-  useAuth();
-  const [data, setData] = useState([]);
+  const [patrocinadores, setPatrocinadores] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  // Buscar os dados dos patrocinadores
+  const fetchPatrocinadores = async () => {
+    try {
+      const response = await fetch('http://localhost:8081/patrocinadores');
+      if (!response.ok) {
+        throw new Error('Erro ao buscar patrocinadores.');
+      }
+      const data = await response.json();
+      setPatrocinadores(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    fetch('http://localhost:8081/patrocinadores')
-      .then((res) => res.json())
-      .then((data) => {
-        console.log(data);
-        setData(data);
-      })
-      .catch((err) => console.log(err));
+    fetchPatrocinadores();
   }, []);
 
-  return (
-    <div className="min-h-screen flex flex-col items-center bg-gray-100 p-8">
-      <h1 className="text-4xl font-bold text-blue-600 mb-6">
-        Nossos Patrocinadores
-      </h1>
-      <p className="text-gray-600 mb-8 text-center">
-        Agradecemos aos nossos patrocinadores pelo apoio e contribuição para o sucesso de nossos eventos.
-      </p>
+  if (loading) return <p>Carregando patrocinadores...</p>;
+  if (error) return <p className="text-red-500">{error}</p>;
 
-      {/* Grid de Patrocinadores */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-8 w-full max-w-7xl">
-        {Array.isArray(data) && data.length > 0 ? (
-          data.map((patrocinador, index) => (
-            <div key={index} className="flex items-center justify-center">
-              
-              
-              {patrocinador.logo ? (
-                <img
-                  src={patrocinador.logo}
-                  alt={`Logo de ${patrocinador.nome}`}
-                  className="h-20 w-auto object-contain"
-                />
-              ) : (
-                <div className="h-20 w-20 bg-gray-200 flex items-center justify-center rounded">
-                  <span className="text-gray-500 text-sm">Sem logo</span>
-                </div>
-              )}
-            </div>
-          ))
-          
-        ) : (
-          <p className="text-gray-600 text-center col-span-full">
-            Nenhum patrocinador disponível no momento.
-          </p>
-        )}
-        
+  return (
+    <div className="flex flex-col items-center p-6 bg-gray-100 min-h-screen">
+      <h1 className="text-3xl font-bold text-blue-600 mb-6">Nossos Patrocinadores</h1>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+        {patrocinadores.map((patrocinador) => (
+          <div key={patrocinador.id_patrocinador} className="text-center bg-white shadow-md rounded-lg p-4">
+            <img
+              src={patrocinador.logo || '/default-logo.png'}
+              alt={`Logo de ${patrocinador.nome}`}
+              className="w-24 h-24 rounded-full object-cover mx-auto mb-2"
+            />
+            <p className="font-semibold text-gray-700">{patrocinador.nome}</p>
+          </div>
+        ))}
       </div>
-      
     </div>
   );
 };
