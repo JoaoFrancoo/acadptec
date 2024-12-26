@@ -73,23 +73,28 @@ function AdminDashboard() {
   };
 
   const handleEdit = async (id, updatedData, section) => {
-    if (!id) {
-      setError('ID inválido.');
-      return;
-    }
+    const allowedFields = ['user_id', 'nome', 'email', 'status'];
+    const sanitizedData = Object.keys(updatedData)
+      .filter((key) => allowedFields.includes(key))
+      .reduce((obj, key) => {
+        obj[key] = updatedData[key];
+        return obj;
+      }, {});
+  
     try {
-      await api.put(`admin/${section}/${id}`, updatedData);
+      await api.put(`admin/${section}/${id}`, sanitizedData);
       fetchData();
     } catch (err) {
+      console.error(err);
       setError('Erro ao salvar as alterações.');
     }
   };
+  
 
   const handleInputChange = (e, item, section) => {
     const { name, value } = e.target;
     const updatedItem = { ...item, [name]: value };
 
-    // Atualizar o estado correspondente
     switch (section) {
       case 'eventos':
         setEventos((prevEventos) =>
@@ -126,6 +131,13 @@ function AdminDashboard() {
           )
         );
         break;
+     case 'palestrantes':
+      setPalestrantes((prev) =>
+        prev.map((palestrante) =>
+          palestrante.user_id === item.user_id ? updatedItem : palestrante
+        )
+      );
+      break;
       default:
         break;
     }
@@ -149,12 +161,14 @@ function AdminDashboard() {
         ? 'id_sala'
         : section === 'organizadores'
         ? 'id_organizador'
+        : section === 'palestrantes'
+        ? 'user_id'
         : 'id';
 
     return (
       <tr key={item[idField]}>
         {Object.keys(item).map((key) => {
-          if (key.includes('id')) return null;
+          if (key.includes('id') && section !== 'palestrantes') return null;
           if (key === 'data_inicio' || key === 'data_fim') {
             return (
               <td key={key}>
@@ -177,13 +191,13 @@ function AdminDashboard() {
                     name="id_categoria"
                     value={item.id_categoria || ''}
                     onChange={(e) => {
-                      const categoriaId = parseInt(e.target.value, 10);  // Converta para número
+                      const categoriaId = parseInt(e.target.value, 10); 
                       const categoria = categorias.find(
                         (categoria) => categoria.id_categoria === categoriaId
                       );
                       const updatedItem = {
                         ...item,
-                        id_categoria: categoriaId,  // Armazene o ID numérico
+                        id_categoria: categoriaId,
                         categoria_nome: categoria ? categoria.descricao : item.categoria_nome,
                       };
                       handleInputChange(e, updatedItem, section);
@@ -237,124 +251,159 @@ function AdminDashboard() {
               return (
                 <td key={key}>
                   <select
-                    name="id_organizador"
-                    value={item.id_organizador || ''}
-                    onChange={(e) => {
-                      const organizador = organizadores.find(
-                        (organizador) => organizador.id_organizador === e.target.value
-                      );
-                      const updatedItem = {
-                        ...item,
-                        id_organizador: e.target.value,
-                        organizador_nome: organizador ? organizador.nome : item.organizador_nome,
-                      };
-                      handleInputChange(e, updatedItem, section);
-                    }}
-                    className="border rounded p-1 w-full"
-                  >
-                    <option value={item.id_organizador || ''}>
-                      {item.organizador_nome || 'Selecione...'}
-                    </option>
-                    {organizadores.map((organizador) => (
-                      <option key={organizador.id_organizador} value={organizador.id_organizador}>
-                        {organizador.nome}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-              );
-            }
-          }
+                   
+                   name="id_organizador"
+                   value={item.id_organizador || ''}
+                   onChange={(e) => {
+                     const organizador = organizadores.find(
+                       (organizador) => organizador.id_organizador === e.target.value
+                     );
+                     const updatedItem = {
+                       ...item,
+                       id_organizador: e.target.value,
+                       organizador_nome: organizador ? organizador.nome : item.organizador_nome,
+                     };
+                     handleInputChange(e, updatedItem, section);
+                   }}
+                   className="border rounded p-1 w-full"
+                 >
+                   <option value={item.id_organizador || ''}>
+                     {item.organizador_nome || 'Selecione...'}
+                   </option>
+                   {organizadores.map((organizador) => (
+                     <option key={organizador.id_organizador} value={organizador.id_organizador}>
+                       {organizador.nome}
+                     </option>
+                   ))}
+                 </select>
+               </td>
+             );
+           }
+         }
 
-          return (
-            <td key={key}>
-              <input
-                type="text"
-                name={key}
-                value={item[key] || ''}
-                onChange={(e) => handleInputChange(e, item, section)}
-                className="border rounded p-1 w-full"
-              />
-            </td>
-          );
-        })}
-        <td>
-          <button
-            onClick={() => handleEdit(item[idField], item, section)}
-            className="px-4 py-2 bg-slate-400 text-white rounded shadow hover:bg-blue-300"
-          >
-            Salvar
-          </button>
-        </td>
-      </tr>
-    );
-  };
+         if (section === 'palestrantes' && key === 'id_cliente') {
+           return (
+             <td key={key}>
+               <select
+                 name="user_id"
+                 value={item.user_id || ''}
+                 onChange={(e) => {
+                  const cliente = clientes.find(
+                    (cliente) => cliente.user_id === parseInt(e.target.value, 10)
+                  );
+                  const updatedItem = {
+                    ...item,
+                    user_id: parseInt(e.target.value, 10),
+                    nome: cliente ? cliente.nome : item.nome,
+                  };
+                  handleInputChange(e, updatedItem, section);
+                }}
+                
+                
+                 className="border rounded p-1 w-full"
+               >
+                 <option value={item.user_id || ''}>
+                   {item.nome || 'Selecione...'}
+                 </option>
+                 {clientes
+                   .filter((cliente) => cliente.nivel === 2)
+                   .map((cliente) => (
+                     <option key={cliente.user_id} value={cliente.user_id}>
+                       {cliente.nome}
+                     </option>
+                   ))}
+               </select>
+             </td>
+           );
+         }
 
-  const renderSection = () => {
-    const dataMap = {
-      clientes,
-      eventos,
-      palestrantes,
-      categorias,
-      salas,
-      organizadores,
-    };
+         return (
+           <td key={key}>
+             <input
+               type="text"
+               name={key}
+               value={item[key] || ''}
+               onChange={(e) => handleInputChange(e, item, section)}
+               className="border rounded p-1 w-full"
+             />
+           </td>
+         );
+       })}
+       <td>
+         <button
+           onClick={() => handleEdit(item[idField], item, section)}
+           className="px-4 py-2 bg-slate-400 text-white rounded shadow hover:bg-blue-300"
+         >
+           Salvar
+         </button>
+       </td>
+     </tr>
+   );
+ };
 
-    const data = dataMap[selectedSection];
+ const renderSection = () => {
+   const dataMap = {
+     clientes,
+     eventos,
+     palestrantes,
+     categorias,
+     salas,
+     organizadores,
+   };
 
-    return (
-      <table className="min-w-full border-collapse">
-        <thead>
-          <tr>
-            {Object.keys(data[0] || {}).map((key) => (
-              <th key={key} className="border p-2 text-left">
-                {key}
-              </th>
-            ))}
-            <th className="border p-2 text-left">Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((item) => renderEditableRow(item, selectedSection))}
-        </tbody>
-      </table>
-    );
-  };
+   const data = dataMap[selectedSection];
 
-  if (loading) return <div>Carregando...</div>;
-  if (error) return <div>{error}</div>;
+   return (
+     <table className="min-w-full border-collapse">
+       <thead>
+         <tr>
+           {Object.keys(data[0] || {}).map((key) => (
+             <th key={key} className="border p-2 text-left">
+               {key}
+             </th>
+           ))}
+           <th className="border p-2 text-left">Ações</th>
+         </tr>
+       </thead>
+       <tbody>
+         {data.map((item) => renderEditableRow(item, selectedSection))}
+       </tbody>
+     </table>
+   );
+ };
 
-  return (
-    <div className="flex">
-      {/* Barra Lateral */}
-      <div className="relative group bg-slate-500 text-white h-screen w-16 p-4 overflow-hidden transition-width duration-300 ease-in-out hover:w-64">
-        <h2 className="text-xl font-bold mb-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out">
-          Admin Dashboard
-        </h2>
-        <ul className="space-y-4 mt-8">
-          {['clientes', 'eventos', 'palestrantes', 'categorias', 'salas', 'organizadores'].map((section) => (
-            <li key={section}>
-              <button
-                onClick={() => setSelectedSection(section)}
-                className="w-full text-left py-2 px-4 hover:bg-gray-600 rounded transition-all duration-300 ease-in-out">
-                {/* Texto só aparece quando a barra está expandida */}
-                <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out">
-                  {section.charAt(0).toUpperCase() + section.slice(1)}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
-      
-      {/* Conteúdo Principal */}
-      <div className="w-3/4 p-6 bg-gray-100">
-        {loading && <p>Carregando...</p>}
-        {error && <p className="text-red-500">{error}</p>}
-        {renderSection()}
-      </div>
-    </div>
-  );
+ if (loading) return <div>Carregando...</div>;
+ if (error) return <div>{error}</div>;
+
+ return (
+   <div className="flex">
+     {/* Barra Lateral */}
+     <div className="relative group bg-slate-500 text-white h-screen w-16 p-4 overflow-hidden transition-width duration-300 ease-in-out hover:w-64">
+       <h2 className="text-xl font-bold mb-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out">
+         Admin Dashboard
+       </h2>
+       <ul className="space-y-4 mt-8">
+         {['clientes', 'eventos', 'palestrantes', 'categorias', 'salas', 'organizadores'].map((section) => (
+           <li key={section}>
+             <button
+               onClick={() => setSelectedSection(section)}
+               className="w-full text-left py-2 px-4 hover:bg-gray-600 rounded transition-all duration-300 ease-in-out">
+               <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out">
+                 {section.charAt(0).toUpperCase() + section.slice(1)}
+               </span>
+             </button>
+           </li>
+         ))}
+       </ul>
+     </div>
+     
+     <div className="w-3/4 p-6 bg-gray-100">
+       {loading && <p>Carregando...</p>}
+       {error && <p className="text-red-500">{error}</p>}
+       {renderSection()}
+     </div>
+   </div>
+ );
 }
 
 export default AdminDashboard;
