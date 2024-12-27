@@ -182,6 +182,36 @@ app.get('/eventos', (req, res) => {
   });
 });
 
+app.post('/admin/eventos', async (req, res) => {
+  const { id_categoria, id_organizador, id_sala, nome, data_inicio, data_fim } = req.body;
+
+  const sql = `
+    INSERT INTO eventos (id_categoria, id_organizador, id_sala, nome, data_inicio, data_fim)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `;
+
+  try {
+    await dbQuery(sql, [id_categoria, id_organizador, id_sala, nome, data_inicio, data_fim]);
+    res.json({ message: 'Evento criado com sucesso!' });
+  } catch (err) {
+    console.error('Erro ao criar evento:', err);
+    res.status(500).json({ message: 'Erro ao criar evento' });
+  }
+});
+
+// Endpoint para buscar categorias, organizadores e salas
+app.get('/admin/opcoes', async (req, res) => {
+  try {
+    const categorias = await dbQuery('SELECT id_categoria, descricao FROM categorias');
+    const organizadores = await dbQuery('SELECT id_organizador, nome FROM organizadores');
+    const salas = await dbQuery('SELECT id_sala, nome_sala FROM salas');
+
+    res.json({ categorias, organizadores, salas });
+  } catch (err) {
+    console.error('Erro ao buscar opções:', err);
+    res.status(500).json({ message: 'Erro ao buscar opções' });
+  }
+});
 // Registrar usuário
 app.post('/register', upload.single('foto'), async (req, res) => {
   const { nome, email, password } = req.body;
@@ -373,8 +403,6 @@ app.get('/patrocinadores/:id', async (req, res) => {
     };
   };
 
-  // **Clientes**
-// **Clientes (Sem senha)**
 app.get('/admin/clientes', async (req, res) => {
   try {
     const clientes = await dbQuery('SELECT user_id, nome, email, nivel FROM login');
@@ -438,6 +466,43 @@ app.get('/admin/clientes/nivel2', async (req, res) => {
     `;
 
     try {
+      app.post('/admin/eventos', async (req, res) => {
+        const { nome, id_categoria, id_organizador, id_sala, data_inicio, data_fim } = req.body;
+    
+      const sql = `
+        INSERT INTO eventos (nome, data_inicio, data_fim, id_categoria, id_sala, id_organizador)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `;
+    
+      try {
+        await dbQuery(sql, [id_categoria, id_organizador, id_sala, nome, data_inicio, data_fim]);
+        res.json({ message: 'Evento criado com sucesso!' });
+      } catch (err) {
+        console.error('Erro ao criar evento:', err);
+        res.status(500).json({ message: 'Erro ao criar evento' });
+      }
+    });
+    
+    // Endpoint para buscar categorias, organizadores e salas
+    app.get('/admin/opcoes', async (req, res) => {
+      try {
+        console.log('Requisição recebida para /admin/opcoes');
+        
+        const categorias = await dbQuery('SELECT id_categoria, descricao FROM categorias');
+        const organizadores = await dbQuery('SELECT id_organizador, nome FROM organizadores');
+        const salas = await dbQuery('SELECT id_sala, nome_sala FROM salas');
+    
+        console.log('Dados recuperados:', { categorias, organizadores, salas });
+    
+        res.json({ categorias, organizadores, salas });
+      } catch (err) {
+        console.error('Erro ao buscar opções:', err);
+        res.status(500).json({ message: 'Erro ao buscar opções' });
+      }
+    });
+    
+    
+    module.exports = app;
       const eventos = await dbQuery(sql);
       res.json(eventos);
     } catch (err) {
@@ -482,17 +547,21 @@ app.get('/admin/palestrantes', async (req, res) => {
 
 app.put('/admin/palestrantes/:id', async (req, res) => {
   const palestranteId = req.params.id;
-  const { nome, email, status, user_id } = req.body;
+  const { biografia, user_id } = req.body;  // Agora usando id_cliente ao invés de user_id
+  const id_cliente = user_id
+
   console.log('Dados recebidos:', req.body);
 
   try {
-    if (!nome || !email || !status || user_id === undefined) {
+    // Verificar se biografia e id_cliente estão presentes
+    if (!biografia || id_cliente === undefined) {
       return res.status(400).json({ message: 'Todos os campos são obrigatórios' });
     }
 
+    // Construir a query para atualizar os dados
     const { query, values } = buildUpdateQuery(
       'palestrantes',
-      { nome, email, status, user_id },
+      { id_cliente, biografia },  // Atualizado para id_cliente ao invés de id_cliente
       'WHERE id_palestrante = ?'
     );
 
@@ -504,14 +573,10 @@ app.put('/admin/palestrantes/:id', async (req, res) => {
 
     res.json({ message: 'Palestrante atualizado com sucesso' });
   } catch (err) {
-
     console.error('Erro ao atualizar palestrante:', err);
     res.status(500).json({ message: 'Erro ao atualizar palestrante' });
   }
 });
-
-
-
 
   // **Categorias**
   app.get('/admin/categorias', async (req, res) => {
@@ -524,30 +589,6 @@ app.put('/admin/palestrantes/:id', async (req, res) => {
     }
   });
 
-  app.put('/admin/palestrantes/:id', async (req, res) => {
-    const { id_cliente, biografia } = req.body; // Recebe id_cliente e biografia do front-end
-    const palestranteId = req.params.id;
-  
-    if (!palestranteId || !id_cliente) {
-      return res.status(400).json({ message: 'ID ou id_cliente inválido.' });
-    }
-  
-    try {
-      const result = await dbQuery(
-        'UPDATE palestrantes SET id_cliente = ?, biografia = ? WHERE id_palestrante = ?',
-        [id_cliente, biografia, palestranteId] // Atualiza id_cliente e biografia
-      );
-  
-      if (result.affectedRows === 0) {
-        return res.status(404).json({ message: 'Palestrante não encontrado.' });
-      }
-  
-      res.json({ message: 'Palestrante atualizado com sucesso.' });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ message: 'Erro ao atualizar palestrante.' });
-    }
-  });
   
   
   // **Salas**

@@ -14,6 +14,7 @@ import EventoDetalhesPage from './pages/eventosDetalhePage';
 import Dashboard from './pages/dashboard';
 import Banido from './pages/banido';
 import EditarPerfil from './pages/editarPerfil';
+import CriarEventos from './pages/criarEventos';
 
 function App() {
   return (
@@ -33,7 +34,7 @@ function App() {
           <Route path="/banido" element={<Banido />} />
           <Route path="/footer" element={<Footer />} />
           <Route path="/editarPerfil" element={<EditarPerfil />} />
-
+          <Route path="/criarEventos" element={<CriarEventos />}/>
         </Routes>
       </ErrorBoundary>
     </Router>

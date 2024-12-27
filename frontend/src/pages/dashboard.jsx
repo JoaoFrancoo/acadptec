@@ -73,7 +73,10 @@ function AdminDashboard() {
   };
 
   const handleEdit = async (id, updatedData, section) => {
-    const allowedFields = ['user_id', 'nome', 'email', 'status'];
+    // Apenas os campos desejados: id_palestrante, user_id e biografia
+    const allowedFields = ['id_palestrante', 'user_id', 'biografia'];
+  
+    // Filtra apenas os campos que estão na lista de allowedFields
     const sanitizedData = Object.keys(updatedData)
       .filter((key) => allowedFields.includes(key))
       .reduce((obj, key) => {
@@ -81,15 +84,25 @@ function AdminDashboard() {
         return obj;
       }, {});
   
-      try {
-        const response = await api.put(`admin/${section}/${id}`, sanitizedData);
-        console.log('Resposta do servidor:', response.data);
-        fetchData();
-      } catch (err) {
-        console.error('Erro na requisição PUT:', err);
-        setError('Erro ao salvar as alterações.');
+    // Log para verificar os dados sanitizados
+    console.log('Dados sanitizados para envio:', sanitizedData);
+  
+    // Aqui, certifique-se de usar o id_palestrante ao invés do user_id
+    const palestranteId = updatedData.id_palestrante; // Certifique-se de que este é o id_palestrante correto
+  
+    try {
+      // Faz a requisição PUT com os dados sanitizados
+      const response = await api.put(`admin/palestrantes/${palestranteId}`, sanitizedData);
+      console.log('Resposta do servidor:', response.data);
+      fetchData(); // Atualiza os dados após a edição
+    } catch (err) {
+      console.error('Erro na requisição PUT:', err);
+      if (err.response) {
+        console.error('Erro do servidor:', err.response.data); // Mensagem do backend
       }
-    };
+      setError('Erro ao salvar as alterações.');
+    }
+  };
   
 
   const handleInputChange = (e, item, section) => {
@@ -296,27 +309,25 @@ function AdminDashboard() {
                   const cliente = clientes.find(
                     (cliente) => cliente.user_id === selectedUserId
                   );
+                
                   const updatedItem = {
                     ...item,
                     user_id: selectedUserId,
                     nome: cliente ? cliente.nome : item.nome,
                   };
-
+                
                   setPalestrantes((prev) =>
                     prev.map((palestrante) =>
-                    palestrante.id_palestrante === item.id_palestrante
-                    ? {
-                        ...palestrante,
-                        user_id: selectedUserId,
-                        nome: cliente ? cliente.nome : palestrante.nome,
-                    }
-                    : palestrante
-                  )
-                );
-                
+                      palestrante.id_palestrante === item.id_palestrante
+                        ? {
+                            ...palestrante,
+                            user_id: selectedUserId,
+                            nome: cliente ? cliente.nome : palestrante.nome,
+                          }
+                        : palestrante
+                    )
+                  );
                 }}
-                
-                
                  className="border rounded p-1 w-full"
                >
                  <option value="">Selecione...
