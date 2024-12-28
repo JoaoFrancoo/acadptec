@@ -15,7 +15,8 @@ const authMiddleware = (req, res, next) => {
   if (!authHeader) {
     return res.status(401).json({ message: 'Token não fornecido' });
   }
-
+// Middleware para logar todas as requisições
+  app.use((req, res, next) => { console.log(`${req.method} ${req.url}`); next(); });
   const token = authHeader.split(' ')[1];
 
   jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
@@ -168,30 +169,55 @@ app.post('/retirar-bilhete/:id_evento', authMiddleware, async (req, res) => {
 });
 
 // Listar eventos
-app.get('/eventos', (req, res) => {
-  const sql = `
-    SELECT e.id_evento, e.nome AS nome_evento, e.data_inicio, e.data_fim, 
-           c.descricao AS categoria, s.nome_sala, s.capacidade
-    FROM eventos e
-    JOIN salas s ON e.id_sala = s.id_sala
-    JOIN categorias c ON e.id_categoria = c.id_categoria;
-  `;
-  db.query(sql, (err, data) => {
-    if (err) return res.json(err);
-    return res.json(data);
-  });
+app.get('/admin/eventos', async (req, res) => {
+  try {
+    const sql = `
+      SELECT 
+        eventos.id_evento, 
+        eventos.nome, 
+        eventos.data_inicio, 
+        eventos.data_fim, 
+        categorias.descricao AS categoria_nome,
+        salas.nome_sala AS sala_nome,
+        organizadores.nome AS organizador_nome
+      FROM eventos
+      LEFT JOIN categorias ON eventos.id_categoria = categorias.id_categoria
+      LEFT JOIN salas ON eventos.id_sala = salas.id_sala
+      LEFT JOIN organizadores ON eventos.id_organizador = organizadores.id_organizador;
+    `;
+
+    const eventos = await dbQuery(sql);
+    res.json(eventos);
+  } catch (err) {
+    console.error('Erro ao buscar eventos:', err);
+    res.status(500).json({ message: 'Erro ao buscar eventos' });
+  }
 });
 
 app.post('/admin/eventos', async (req, res) => {
-  const { id_categoria, id_organizador, id_sala, nome, data_inicio, data_fim } = req.body;
+  const { nome, id_categoria, id_organizadores, id_sala, data_inicio, data_fim, user_id } = req.body;
 
-  const sql = `
-    INSERT INTO eventos (id_categoria, id_organizador, id_sala, nome, data_inicio, data_fim)
+  const sqlEvento = `
+    INSERT INTO eventos (nome, data_inicio, data_fim, id_categoria, id_organizadores, id_sala)
     VALUES (?, ?, ?, ?, ?, ?)
   `;
 
   try {
-    await dbQuery(sql, [id_categoria, id_organizador, id_sala, nome, data_inicio, data_fim]);
+    // Insere o evento
+    const eventoResult = await dbQuery(sqlEvento, [nome, data_inicio, data_fim, id_categoria, id_organizadores, id_sala]);
+    const eventoId = eventoResult.insertId;
+
+    // Insere palestrantes na tabela EventosPalestrantes usando user_id da tabela login
+    const sqlEventosPalestrantes = `
+      INSERT INTO EventosPalestrantes (evento_id, palestrante_id)
+      VALUES (?, ?)
+    `;
+
+    for (const palestranteUserId of user_id) {
+      console.log('Inserindo palestrante com user_id:', palestranteUserId); // Adicionando log para verificar o user_id
+      await dbQuery(sqlEventosPalestrantes, [eventoId, palestranteUserId]);
+    }
+
     res.json({ message: 'Evento criado com sucesso!' });
   } catch (err) {
     console.error('Erro ao criar evento:', err);
@@ -200,37 +226,36 @@ app.post('/admin/eventos', async (req, res) => {
 });
 
 // Endpoint para buscar categorias, organizadores e salas
-app.get('/admin/opcoes', async (req, res) => {
+app.get('/admin/opcoes',authMiddleware, async (req, res) => {
   try {
+    console.log('Requisição recebida para /admin/opcoes');
+    
+    console.log('Antes da consulta do banco de dados');
     const categorias = await dbQuery('SELECT id_categoria, descricao FROM categorias');
-    const organizadores = await dbQuery('SELECT id_organizador, nome FROM organizadores');
-    const salas = await dbQuery('SELECT id_sala, nome_sala FROM salas');
+    console.log('Categorias recuperadas:', categorias);
+    
 
-    res.json({ categorias, organizadores, salas });
+    const organizadores = await dbQuery('SELECT id_organizador, nome FROM organizadores');
+    console.log('Organizadores recuperados:', organizadores);
+
+    const salas = await dbQuery('SELECT id_sala, nome_sala FROM salas');
+    console.log('Salas recuperadas:', salas);
+
+    // Verificação antes da consulta de palestrantes
+    console.log('Iniciando a consulta para palestrantes...');
+    const palestrantes = await dbQuery('SELECT user_id, nome FROM login WHERE nivel = 2');
+    console.log('Palestrantes recuperados:', palestrantes);
+
+    // Verificando se os palestrantes foram realmente recuperados
+    if (!palestrantes.length) {
+      console.log('Nenhum palestrante encontrado');
+    }
+
+    res.json({ categorias, organizadores, salas, palestrantes });
   } catch (err) {
     console.error('Erro ao buscar opções:', err);
     res.status(500).json({ message: 'Erro ao buscar opções' });
   }
-});
-// Registrar usuário
-app.post('/register', upload.single('foto'), async (req, res) => {
-  const { nome, email, password } = req.body;
-
-  if (!req.file) {
-    return res.status(400).json({ message: 'Por favor, envie uma foto.' });
-  }
-
-  const foto = req.file.filename;
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  const sql = 'INSERT INTO login (foto, email, nome, password) VALUES (?, ?, ?, ?)';
-  db.query(sql, [foto, email, nome, hashedPassword], (err) => {
-    if (err) {
-      console.error('Erro ao registrar o utilizador:', err);
-      return res.status(500).json({ message: 'Erro ao registrar o utilizador' });
-    }
-    res.status(201).json({ message: 'Utilizador registrado com sucesso!' });
-  });
 });
 
 // Login
@@ -450,59 +475,22 @@ app.get('/admin/clientes/nivel2', async (req, res) => {
 
   // **Eventos**
   app.get('/admin/eventos', async (req, res) => {
-    const sql = `
-      SELECT 
-        eventos.id_evento, 
-        eventos.nome, 
-        eventos.data_inicio, 
-        eventos.data_fim, 
-        categorias.descricao AS categoria_nome,
-        salas.nome_sala AS sala_nome,
-        organizadores.nome AS organizador_nome
-      FROM eventos
-      LEFT JOIN categorias ON eventos.id_categoria = categorias.id_categoria
-      LEFT JOIN salas ON eventos.id_sala = salas.id_sala
-      LEFT JOIN organizadores ON eventos.id_organizador = organizadores.id_organizador;
-    `;
-
     try {
-      app.post('/admin/eventos', async (req, res) => {
-        const { nome, id_categoria, id_organizador, id_sala, data_inicio, data_fim } = req.body;
-    
       const sql = `
-        INSERT INTO eventos (nome, data_inicio, data_fim, id_categoria, id_sala, id_organizador)
-        VALUES (?, ?, ?, ?, ?, ?)
+        SELECT 
+          eventos.id_evento, 
+          eventos.nome, 
+          eventos.data_inicio, 
+          eventos.data_fim, 
+          categorias.descricao AS categoria_nome,
+          salas.nome_sala AS sala_nome,
+          organizadores.nome AS organizador_nome
+        FROM eventos
+        LEFT JOIN categorias ON eventos.id_categoria = categorias.id_categoria
+        LEFT JOIN salas ON eventos.id_sala = salas.id_sala
+        LEFT JOIN organizadores ON eventos.id_organizador = organizadores.id_organizador;
       `;
-    
-      try {
-        await dbQuery(sql, [id_categoria, id_organizador, id_sala, nome, data_inicio, data_fim]);
-        res.json({ message: 'Evento criado com sucesso!' });
-      } catch (err) {
-        console.error('Erro ao criar evento:', err);
-        res.status(500).json({ message: 'Erro ao criar evento' });
-      }
-    });
-    
-    // Endpoint para buscar categorias, organizadores e salas
-    app.get('/admin/opcoes', async (req, res) => {
-      try {
-        console.log('Requisição recebida para /admin/opcoes');
-        
-        const categorias = await dbQuery('SELECT id_categoria, descricao FROM categorias');
-        const organizadores = await dbQuery('SELECT id_organizador, nome FROM organizadores');
-        const salas = await dbQuery('SELECT id_sala, nome_sala FROM salas');
-    
-        console.log('Dados recuperados:', { categorias, organizadores, salas });
-    
-        res.json({ categorias, organizadores, salas });
-      } catch (err) {
-        console.error('Erro ao buscar opções:', err);
-        res.status(500).json({ message: 'Erro ao buscar opções' });
-      }
-    });
-    
-    
-    module.exports = app;
+  
       const eventos = await dbQuery(sql);
       res.json(eventos);
     } catch (err) {
@@ -510,7 +498,7 @@ app.get('/admin/clientes/nivel2', async (req, res) => {
       res.status(500).json({ message: 'Erro ao buscar eventos' });
     }
   });
-
+  
   app.put('/admin/eventos/:id', async (req, res) => {
     const eventId = req.params.id;
     const { nome, data_inicio, data_fim, id_categoria, id_sala, id_organizador } = req.body;

@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import { jwtDecode } from 'jwt-decode';
 
 const CriarEventos = () => {
-  // Estado para categorias, organizadores, salas e o formulário
   const [categorias, setCategorias] = useState([]);
   const [organizadores, setOrganizadores] = useState([]);
   const [salas, setSalas] = useState([]);
+  const [palestrantes, setPalestrantes] = useState([]);
   const [formData, setFormData] = useState({
     id_categoria: '',
-    id_organizador: '',
+    id_organizadores: '',  // Mudamos para singular
+    user_id: [], 
     id_sala: '',
     nome: '',
     data_inicio: '',
@@ -15,18 +18,34 @@ const CriarEventos = () => {
   });
   const [loading, setLoading] = useState(true);
 
+  const token = localStorage.getItem('token');
+  const api = axios.create({
+    baseURL: 'http://localhost:8081/',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
   useEffect(() => {
-    fetch('http://localhost:8081/admin/opcoes') 
+    console.log('Token JWT recuperado:', token);
+    let userData;
+
+    if (token) {
+      try {
+        userData = jwtDecode(token);
+        console.log('Dados decodificados do token JWT:', userData);
+      } catch (error) {
+        console.error('Erro ao decodificar o token JWT:', error);
+      }
+    }
+
+    api.get('/admin/opcoes')
       .then((res) => {
-        if (!res.ok) {
-          throw new Error(`Erro na requisição: ${res.statusText}`);
-        }
-        return res.json();
-      })
-      .then((data) => {
-        setCategorias(data.categorias || []);
-        setOrganizadores(data.organizadores || []);
-        setSalas(data.salas || []);
+        console.log('Dados recebidos do backend:', res.data);
+        setCategorias(res.data.categorias || []);
+        setOrganizadores(res.data.organizadores || []);
+        setSalas(res.data.salas || []);
+        setPalestrantes(res.data.palestrantes || []);
         setLoading(false);
       })
       .catch((err) => {
@@ -35,27 +54,31 @@ const CriarEventos = () => {
       });
   }, []);
   
-
-  // Função para lidar com a mudança de valor nos inputs
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Função para enviar o formulário
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    fetch('http://localhost:8081/admin/eventos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      })
-      .then((res) => res.json())
-      .then((data) => alert(data.message)) // Alerta o usuário sobre o status
-      .catch((err) => console.error('Erro ao criar evento:', err));
+  const handleMultiSelectChange = (e) => {
+    const { name, selectedOptions } = e.target;
+    const values = Array.from(selectedOptions, option => option.value);
+    setFormData((prev) => ({ ...prev, [name]: values }));
   };
 
-  // Se estiver carregando os dados, exibe uma mensagem
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log('Dados do formulário a serem enviados:', formData);
+    console.log('Token JWT enviado:', token);
+
+    api.post('/admin/eventos', formData)
+      .then((res) => {
+        alert(res.data.message);
+      })
+      .catch((err) => {
+        console.error('Erro ao criar evento:', err);
+      });
+  };
+
   if (loading) {
     return <div className="text-center text-xl mt-12">Carregando opções...</div>;
   }
@@ -64,7 +87,6 @@ const CriarEventos = () => {
     <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg">
       <h1 className="text-3xl font-semibold text-center text-gray-800 mb-6">Adicionar Novo Evento</h1>
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Nome do Evento */}
         <div>
           <label htmlFor="nome" className="block text-lg font-medium text-gray-700">Nome do Evento:</label>
           <input
@@ -98,13 +120,13 @@ const CriarEventos = () => {
           </select>
         </div>
 
-        {/* Organizador */}
+        {/* Organizadores */}
         <div>
-          <label htmlFor="id_organizador" className="block text-lg font-medium text-gray-700">Organizador:</label>
+          <label htmlFor="id_organizadores" className="block text-lg font-medium text-gray-700">Organizadores:</label>
           <select
-            name="id_organizador"
-            id="id_organizador"
-            value={formData.id_organizador}
+            name="id_organizadores"
+            id="id_organizadores"
+            value={formData.id_organizadores}
             onChange={handleInputChange}
             required
             className="w-full p-3 mt-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -113,6 +135,26 @@ const CriarEventos = () => {
             {organizadores.map((organizador) => (
               <option key={organizador.id_organizador} value={organizador.id_organizador}>
                 {organizador.nome}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Palestrantes */}
+        <div>
+          <label htmlFor="user_id" className="block text-lg font-medium text-gray-700">Palestrantes:</label>
+          <select
+            name="user_id"
+            id="user_id"
+            multiple
+            value={formData.user_id}
+            onChange={handleMultiSelectChange}
+            required
+            className="w-full p-3 mt-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {palestrantes.map((palestrante) => (
+              <option key={palestrante.user_id} value={palestrante.user_id}>
+                {palestrante.nome}
               </option>
             ))}
           </select>
