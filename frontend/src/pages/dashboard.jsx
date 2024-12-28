@@ -264,32 +264,41 @@ function AdminDashboard() {
               );
             }
 
-            if (key === 'organizador_nome') {
+            if (section === 'organizadores' && key === 'nome') {
               return (
                 <td key={key}>
                   <select
                    
-                   name="id_organizador"
-                   value={item.id_organizador || ''}
+                   name="organizador_nome"
+                   value={item.organizador_nome || ''}
                    onChange={(e) => {
+                     const organizadorNome = e.target.value;
                      const organizador = organizadores.find(
-                       (organizador) => organizador.id_organizador === e.target.value
+                       (org) => org.nome === organizadorNome
                      );
                      const updatedItem = {
                        ...item,
-                       id_organizador: e.target.value,
-                       organizador_nome: organizador ? organizador.nome : item.organizador_nome,
+                       id_organizador: organizador ? organizador.id_organizador : null,
+                       organizador_nome: organizadorNome,
                      };
-                     handleInputChange(e, updatedItem, section);
+                     setOrganizadores((prev) =>
+                      prev.map((org) =>
+                        org.id_organizador === item.id_organizador
+                          ? updatedItem
+                          : org
+                      )
+                    );
+                     handleInputChange(
+                      { target: {name: 'organizador_nome', value: organizadorNome}},
+                      updatedItem, 
+                      section);
                    }}
                    className="border rounded p-1 w-full"
                  >
-                   <option value={item.id_organizador || ''}>
-                     {item.organizador_nome || 'Selecione...'}
-                   </option>
+                   <option value="">Selecione...</option>
                    {organizadores.map((organizador) => (
-                     <option key={organizador.id_organizador} value={organizador.id_organizador}>
-                       {organizador.nome}
+                     <option key={organizador.id_organizador} value={organizador.nome}>
+                      {organizador.nome}
                      </option>
                    ))}
                  </select>
