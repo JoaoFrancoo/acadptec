@@ -202,7 +202,9 @@ function AdminDashboard() {
                   className="border rounded p-1 w-full"
                 >
                   <option value="">Selecione...</option>
-                  {clientes.map((cliente) => (
+                  {clientes
+                  .filter((cliente) => cliente.nivel === 3)
+                  .map((cliente) => (
                     <option key={cliente.user_id} value={cliente.user_id}>
                       {cliente.nome}
                     </option>
