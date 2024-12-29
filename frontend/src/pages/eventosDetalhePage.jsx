@@ -132,21 +132,23 @@ function EventoDetalhesPage() {
     );
   }
 
+  const palestrantesNomes = evento.palestrantes?.map(palestrante => palestrante.nome).join(', ');
+
   return (
     <div className="min-h-screen bg-gray-100 py-10 px-6">
       <div className="max-w-5xl mx-auto bg-white shadow-md rounded-lg p-6">
         <h1 className="text-4xl font-bold text-left text-blue-600 mb-4" style={{ marginLeft: '40px', marginBottom: '50px' }}>{evento.nome_evento}</h1>
-        <div className="flex flex-col md:flex-row">
-          <div className="relative w-64 h-64 md:w-96 md:h-96 flex-shrink-0 mb-6 md:mb-0 md:mr-6 overflow-hidden rounded-lg">
-            {evento.foto && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {evento.foto && (
+            <div className="relative w-full h-64 md:w-96 md:h-96 flex-shrink-0 overflow-hidden rounded-lg">
               <img 
                 src={evento.foto} 
                 alt={`Foto do evento ${evento.nome_evento}`} 
                 className="w-full h-full object-cover"
               />
-            )}
-          </div>
-          <div className="flex-1">
+            </div>
+          )}
+          <div className={`flex flex-col ${evento.foto ? '' : 'col-span-2'}`}>
             <table className="min-w-full bg-white mb-6">
               <tbody>
                 <tr>
@@ -169,51 +171,39 @@ function EventoDetalhesPage() {
                   <td className="px-8 py-2 border font-semibold">Capacidade:</td>
                   <td className="px-8 py-2 border">{evento.capacidade}</td>
                 </tr>
+                <tr>
+                  <td className="px-8 py-2 border font-semibold">Palestrantes:</td>
+                  <td className="px-8 py-2 border">{palestrantesNomes || 'N/A'}</td>
+                </tr>
               </tbody>
             </table>
-            <p className="text-gray-600 mb-6">{evento.descricao}</p>
+            <div className="mt-6">
+              {isInscrito ? (
+                <button
+                  onClick={handleDesinscrever}
+                  className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+                >
+                  Desinscrever
+                </button>
+              ) : capacidade > 0 ? (
+                <button
+                  onClick={handleInscrever}
+                  className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+                >
+                  Inscrever
+                </button>
+              ) : (
+                <p className="text-red-500 font-semibold">Esgotado</p>
+              )}
+            </div>
           </div>
         </div>
         <div className="mt-8">
-          <h2 className="text-2xl font-semibold text-gray-800">Palestrantes</h2>
-          <ul className="list-disc list-inside mt-2">
-            {evento.palestrantes?.map((palestrante) => (
-              <li key={palestrante.user_id} className="text-gray-600">
-                {palestrante.nome}
-              </li>
-            ))}
-          </ul>
+          <p className="text-gray-600 mb-6">{evento.descricao}</p>
         </div>
-        <div className="mt-6">
-          {isInscrito ? (
-            <button
-              onClick={handleDesinscrever}
-              className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-            >
-              Desinscrever
-            </button>
-          ) : capacidade > 0 ? (
-            <button
-            onClick={handleInscrever}
-            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-          >
-            Inscrever
-          </button>
-        ) : (
-          <p className="text-red-500 font-semibold">Esgotado</p>
-        )}
       </div>
-      {isInscrito && (
-        <button
-          onClick={handleDesinscrever}
-          className="mt-6 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-        >
-          Desinscrever
-        </button>
-      )}
     </div>
-  </div>
-);
+  );
 }
 
 export default EventoDetalhesPage;

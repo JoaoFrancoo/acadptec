@@ -15,7 +15,7 @@ const authMiddleware = (req, res, next) => {
   if (!authHeader) {
     return res.status(401).json({ message: 'Token não fornecido' });
   }
-// Middleware para logar todas as requisições
+
   app.use((req, res, next) => { console.log(`${req.method} ${req.url}`); next(); });
   const token = authHeader.split(' ')[1];
 
@@ -199,11 +199,11 @@ app.get('/admin/eventos', async (req, res) => {
         eventos.data_fim, 
         categorias.descricao AS categoria_nome,
         salas.nome_sala AS sala_nome,
-        organizadores.nome AS organizador_nome
+        login.nome AS organizador_nome
       FROM eventos
       LEFT JOIN categorias ON eventos.id_categoria = categorias.id_categoria
       LEFT JOIN salas ON eventos.id_sala = salas.id_sala
-      LEFT JOIN organizadores ON eventos.id_organizador = organizadores.id_organizador;
+      LEFT JOIN login ON eventos.id_organizador = login.user_id AND login.nivel = 3;
     `;
 
     const eventos = await dbQuery(sql);
@@ -213,6 +213,7 @@ app.get('/admin/eventos', async (req, res) => {
     res.status(500).json({ message: 'Erro ao buscar eventos' });
   }
 });
+
 // Rota para criar eventos com upload de imagem
 app.post('/admin/eventos', authMiddleware, upload2.single('imagem'), async (req, res) => {
   const { nome, id_categoria, id_organizadores, id_sala, data_inicio, data_fim, user_id, breve_desc, descricao } = req.body;
@@ -580,11 +581,11 @@ app.get('/admin/clientes/nivel2', async (req, res) => {
           eventos.data_fim, 
           categorias.descricao AS categoria_nome,
           salas.nome_sala AS sala_nome,
-          organizadores.nome AS organizador_nome
+          login.nome AS organizador_nome
         FROM eventos
         LEFT JOIN categorias ON eventos.id_categoria = categorias.id_categoria
         LEFT JOIN salas ON eventos.id_sala = salas.id_sala
-        LEFT JOIN organizadores ON eventos.id_organizador = organizadores.id_organizador;
+        LEFT JOIN login ON eventos.id_organizador = login.user_id AND login.nivel = 3;
       `;
   
       const eventos = await dbQuery(sql);
@@ -593,7 +594,7 @@ app.get('/admin/clientes/nivel2', async (req, res) => {
       console.error('Erro ao buscar eventos:', err);
       res.status(500).json({ message: 'Erro ao buscar eventos' });
     }
-  });
+  });  
   
   app.put('/admin/eventos/:id', async (req, res) => {
     const eventId = req.params.id;
@@ -709,39 +710,63 @@ app.put('/admin/palestrantes/:id', async (req, res) => {
     }
   });
 
-  // **Organizadores**
-  app.get('/admin/organizadores', async (req, res) => {
-    try {
-      const organizadores = await dbQuery('SELECT id_organizador, nome FROM organizadores');
-      res.json(organizadores);
-    } catch (err) {
-      console.error('Erro ao buscar organizadores:', err);
-      res.status(500).json({ message: 'Erro ao buscar organizadores' });
+ app.get('/admin/organizadores', async (req, res) => {
+  try {
+    const organizadores = await dbQuery('SELECT id_organizador, user_id, departamento FROM organizadores');
+    console.log('Organizadores:', organizadores);
+    res.json(organizadores);
+  } catch (err) {
+    console.error('Erro ao buscar organizadores:', err);
+    res.status(500).json({ message: 'Erro ao buscar organizadores' });
+  }
+});
+
+app.get('/admin/clientesOrganizadores', async (req, res) => {
+  try {
+    const clientesOrganizadores = await dbQuery('SELECT user_id, nome FROM login WHERE nivel = 3');
+    res.json(clientesOrganizadores);
+  } catch (err) {
+    console.error('Erro ao buscar clientes organizadores:', err);
+    res.status(500).json({ message: 'Erro ao buscar clientes organizadores' });
+  }
+});
+
+app.put('/admin/organizadores/:id', async (req, res) => {
+  const organizadorId = req.params.id; // ID do organizador na tabela organizadores
+  const { user_id, departamento } = req.body; // user_id refere-se à tabela login
+
+  try {
+    // Verificar se o user_id existe na tabela login e se é nível 3
+    const userCheck = await dbQuery(
+      'SELECT nome FROM login WHERE user_id = ? AND nivel = 3',
+      [user_id]
+    );
+
+    if (userCheck.length === 0) {
+      return res.status(400).json({ message: 'Usuário inválido ou não é organizador' });
     }
-  });
 
-  app.put('/admin/organizadores/:id', async (req, res) => {
-    const organizadorId = req.params.id;
-    const { nome } = req.body;
+    // Atualizar a tabela organizadores
+    const { query, values } = buildUpdateQuery(
+      'organizadores',
+      { user_id, departamento },
+      'WHERE id_organizador = ?'
+    );
+    const result = await dbQuery(query, [...values, organizadorId]);
 
-    try {
-      const { query, values } = buildUpdateQuery(
-        'organizadores',
-        { nome },
-        'WHERE id_organizador = ?'
-      );
-      const result = await dbQuery(query, [...values, organizadorId]);
-
-      if (result.affectedRows === 0) {
-        return res.status(404).json({ message: 'Organizador não encontrado' });
-      }
-
-      res.json({ message: 'Organizador atualizado com sucesso' });
-    } catch (err) {
-      console.error('Erro ao atualizar organizador:', err);
-      res.status(500).json({ message: 'Erro ao atualizar organizador' });
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Organizador não encontrado' });
     }
-  });
+
+    res.json({ message: 'Organizador atualizado com sucesso' });
+  } catch (err) {
+    console.error('Erro ao atualizar organizador:', err);
+    res.status(500).json({ message: 'Erro ao atualizar organizador' });
+  }
+});
+
+
+
 
   // Iniciar o servidor
   app.listen(8081, () => {
