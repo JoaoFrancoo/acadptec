@@ -120,10 +120,15 @@ app.get('/users', (req, res) => {
 // Comprar bilhete
 app.post('/comprar-bilhete/:id_evento', authMiddleware, async (req, res) => {
   const { id_evento } = req.params;
+  const { quantidade } = req.body;
   const id_cliente = req.id_cliente;
 
   if (!id_cliente) {
     return res.status(400).json({ error: 'ID do cliente não encontrado no token' });
+  }
+
+  if (quantidade <= 0) {
+    return res.status(400).json({ error: 'Quantidade inválida' });
   }
 
   try {
@@ -132,20 +137,32 @@ app.post('/comprar-bilhete/:id_evento', authMiddleware, async (req, res) => {
     const updateResult = await dbQuery(
       `UPDATE salas s
        JOIN eventos e ON e.id_sala = s.id_sala
-       SET s.capacidade = s.capacidade - 1
-       WHERE e.id_evento = ? AND s.capacidade > 0`,
-      [id_evento]
+       SET s.capacidade = s.capacidade - ?
+       WHERE e.id_evento = ? AND s.capacidade >= ?`,
+      [quantidade, id_evento, quantidade]
     );
 
     if (updateResult.affectedRows === 0) {
       await dbQuery('ROLLBACK');
-      return res.status(400).json({ error: 'Capacidade esgotada' });
+      return res.status(400).json({ error: 'Capacidade insuficiente' });
     }
 
-    await dbQuery(
-      `INSERT INTO inscricoes (id_cliente, id_evento, visivel) VALUES (?, ?, 1)`,
+    const existingInscricao = await dbQuery(
+      `SELECT quantidade FROM inscricoes WHERE id_cliente = ? AND id_evento = ?`,
       [id_cliente, id_evento]
     );
+
+    if (existingInscricao.length > 0) {
+      await dbQuery(
+        `UPDATE inscricoes SET quantidade = quantidade + ?, visivel = 1 WHERE id_cliente = ? AND id_evento = ?`,
+        [quantidade, id_cliente, id_evento]
+      );
+    } else {
+      await dbQuery(
+        `INSERT INTO inscricoes (id_cliente, id_evento, visivel, quantidade) VALUES (?, ?, 1, ?)`,
+        [id_cliente, id_evento, quantidade]
+      );
+    }
 
     await dbQuery('COMMIT');
     res.json({ mensagem: 'Bilhete comprado com sucesso' });
@@ -157,36 +174,62 @@ app.post('/comprar-bilhete/:id_evento', authMiddleware, async (req, res) => {
   }
 });
 
-// Retirar bilhete
 app.post('/retirar-bilhete/:id_evento', authMiddleware, async (req, res) => {
   const { id_evento } = req.params;
+  const { quantidade } = req.body;
   const id_cliente = req.id_cliente;
 
+  if (!id_cliente) {
+    return res.status(400).json({ error: 'ID do cliente não encontrado no token' });
+  }
+
+  if (quantidade <= 0) {
+    return res.status(400).json({ error: 'Quantidade inválida' });
+  }
+
   try {
-    const updateResult = await dbQuery(
-      `UPDATE inscricoes SET visivel = 0 
-       WHERE id_cliente = ? AND id_evento = ? AND visivel = 1`,
+    await dbQuery('START TRANSACTION');
+
+    const inscricaoResult = await dbQuery(
+      `SELECT quantidade FROM inscricoes WHERE id_cliente = ? AND id_evento = ?`,
       [id_cliente, id_evento]
     );
 
-    if (updateResult.affectedRows === 0) {
-      return res.status(400).json({ error: 'Bilhete não encontrado ou já retirado' });
+    if (inscricaoResult.length === 0 || inscricaoResult[0].quantidade < quantidade) {
+      await dbQuery('ROLLBACK');
+      return res.status(400).json({ error: 'Quantidade de bilhetes insuficiente para desinscrever' });
     }
 
     await dbQuery(
       `UPDATE salas s
        JOIN eventos e ON e.id_sala = s.id_sala
-       SET s.capacidade = s.capacidade + 1
+       SET s.capacidade = s.capacidade + ?
        WHERE e.id_evento = ?`,
-      [id_evento]
+      [quantidade, id_evento]
     );
 
+    if (inscricaoResult[0].quantidade === quantidade) {
+      await dbQuery(
+        `UPDATE inscricoes SET quantidade = 0, visivel = 0 WHERE id_cliente = ? AND id_evento = ?`,
+        [id_cliente, id_evento]
+      );
+    } else {
+      await dbQuery(
+        `UPDATE inscricoes SET quantidade = quantidade - ?, visivel = 1 WHERE id_cliente = ? AND id_evento = ?`,
+        [quantidade, id_cliente, id_evento]
+      );
+    }
+
+    await dbQuery('COMMIT');
     res.json({ mensagem: 'Bilhete retirado com sucesso' });
+
   } catch (error) {
+    await dbQuery('ROLLBACK');
     console.error('Erro ao retirar bilhete:', error);
     res.status(500).json({ error: 'Erro ao retirar bilhete' });
   }
 });
+
 
 // Listar eventos
 app.get('/admin/eventos', async (req, res) => {
@@ -323,7 +366,7 @@ app.get('/user/me/details', authMiddleware, (req, res) => {
 
   const sqlUser = 'SELECT user_id, foto, email, nome FROM login WHERE user_id = ?';
   const sqlInscricoes = `
-    SELECT e.id_evento, e.nome AS nome_evento
+    SELECT e.id_evento, e.nome AS nome_evento, i.quantidade
     FROM inscricoes i
     JOIN eventos e ON i.id_evento = e.id_evento
     WHERE i.id_cliente = ? AND i.visivel = 1`;
@@ -345,30 +388,75 @@ app.get('/user/me/details', authMiddleware, (req, res) => {
     });
   });
 });
-// Atualizar detalhes do usuário logado
-app.put('/user/me/update', authMiddleware, upload.single('foto'), (req, res) => {
-  const userId = req.id_cliente;
-  const { nome, email } = req.body;
-  const foto = req.file ? req.file.filename : null;
+app.put('/user/me/update', authMiddleware, upload.single('foto'), async (req, res) => {
+  const { user_id, nome, email, password, departamento, biografia } = req.body;
+  const userId = user_id; // Use o user_id do corpo da requisição
+  let foto = req.file ? req.file.filename : null; // Obtem o nome do arquivo de foto se foi feito upload
 
-  if (!nome || !email) {
-    return res.status(400).json({ message: 'Nome e email são obrigatórios.' });
-  }
+  console.log("Dados recebidos no backend:", { nome, email, password, departamento, biografia, foto, userId });
 
-  const sqlUpdate = `
-    UPDATE login 
-    SET nome = ?, email = ?, foto = ? 
-    WHERE user_id = ?`;
+  try {
+    // Atualiza os campos do usuário na tabela login
+    const updates = [];
+    const values = [];
 
-  db.query(sqlUpdate, [nome, email, foto || null, userId], (err, result) => {
-    if (err) return res.status(500).json({ message: 'Erro ao atualizar os dados do utilizador.' });
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ message: 'Utilizador não encontrado.' });
+    if (nome) {
+      updates.push('nome = ?');
+      values.push(nome);
     }
 
-    res.json({ message: 'Dados atualizados com sucesso!' });
-  });
+    if (email) {
+      updates.push('email = ?');
+      values.push(email);
+    }
+
+    if (password) {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      updates.push('password = ?');
+      values.push(hashedPassword);
+    }
+
+    if (foto) {
+      updates.push('foto = ?');
+      values.push(foto);
+    }
+
+    values.push(userId);
+
+    if (updates.length > 0) {
+      const sql = `UPDATE login SET ${updates.join(', ')} WHERE user_id = ?`;
+      console.log("SQL Update:", sql, values);
+      await dbQuery(sql, values);
+    }
+
+    // Atualiza o departamento se for organizador
+    if (departamento !== undefined) {
+      const organizador = await dbQuery('SELECT id_organizador FROM organizadores WHERE user_id = ?', [userId]);
+      if (organizador.length > 0) {
+        console.log("Organizador encontrado:", organizador[0]);
+        await dbQuery('UPDATE organizadores SET departamento = ? WHERE id_organizador = ?', [departamento, organizador[0].id_organizador]);
+      } else {
+        console.log("Organizador não encontrado para userId:", userId);
+      }
+    }
+
+    // Atualiza a biografia se for palestrante
+    if (biografia !== undefined) {
+      const id_cliente = userId; // Atribui userId a id_cliente para palestrantes
+      const palestrante = await dbQuery('SELECT id_palestrante FROM palestrantes WHERE id_cliente = ?', [id_cliente]);
+      if (palestrante.length > 0) {
+        console.log("Palestrante encontrado:", palestrante[0]);
+        await dbQuery('UPDATE palestrantes SET biografia = ? WHERE id_palestrante = ?', [biografia, palestrante[0].id_palestrante]);
+      } else {
+        console.log("Palestrante não encontrado para id_cliente:", id_cliente);
+      }
+    }
+
+    res.json({ message: 'Perfil atualizado com sucesso!' });
+  } catch (error) {
+    console.error('Erro ao atualizar perfil:', error);
+    res.status(500).json({ message: 'Erro ao atualizar perfil.' });
+  }
 });
 
 app.get('/eventos/', (req, res) => {

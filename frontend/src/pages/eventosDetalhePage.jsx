@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import useAuth from '../components/userAuth';
+import Modal from 'react-modal';
+
+Modal.setAppElement('#root');
 
 function EventoDetalhesPage() {
   useAuth();
@@ -10,8 +13,10 @@ function EventoDetalhesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [capacidade, setCapacidade] = useState(0);
+  const [modalIsOpen, setModalIsOpen] = useState(false);
+  const [modalType, setModalType] = useState('');
+  const [quantidade, setQuantidade] = useState(1);
 
-  // Função para buscar detalhes do evento
   useEffect(() => {
     const fetchEvento = async () => {
       try {
@@ -23,7 +28,6 @@ function EventoDetalhesPage() {
         setEvento(data);
         setCapacidade(data.capacidade);
 
-        // Verificar se o utilizador está inscrito no evento
         const token = localStorage.getItem('token');
         if (token) {
           const inscricaoResponse = await fetch(`http://localhost:8081/user/me/details`, {
@@ -35,7 +39,7 @@ function EventoDetalhesPage() {
           if (inscricaoResponse.ok) {
             const inscricaoData = await inscricaoResponse.json();
             const inscrito = inscricaoData.inscricoes.some(
-              (inscricao) => inscricao.id_evento === parseInt(id)
+              (inscricao) => inscricao.id_evento === parseInt(id) && inscricao.visivel === 1
             );
             setIsInscrito(inscrito);
           }
@@ -50,61 +54,47 @@ function EventoDetalhesPage() {
     fetchEvento();
   }, [id]);
 
-  // Função para inscrever no evento
-  const handleInscrever = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      alert('Utilizador não autenticado');
-      return;
-    }
-
-    try {
-      const response = await fetch(`http://localhost:8081/comprar-bilhete/${id}`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        alert('Inscrição realizada com sucesso');
-        setIsInscrito(true);
-        setCapacidade(capacidade - 1);
-      } else {
-        const errorData = await response.json();
-        alert(`Erro: ${errorData.error || 'Não foi possível inscrever'}`);
-      }
-    } catch (error) {
-      alert('Erro ao inscrever');
-    }
+  const openModal = (type) => {
+    setModalType(type);
+    setModalIsOpen(true);
   };
 
-  // Função para desinscrever do evento
-  const handleDesinscrever = async () => {
+  const closeModal = () => {
+    setModalIsOpen(false);
+  };
+
+  const handleConfirm = async () => {
     const token = localStorage.getItem('token');
     if (!token) {
       alert('Utilizador não autenticado');
       return;
     }
 
+    if (modalType === 'inscrever' && quantidade > capacidade) {
+      alert('Não existem lugares suficientes');
+      return;
+    }
+
+    const endpoint = modalType === 'inscrever' ? `comprar-bilhete/${id}` : `retirar-bilhete/${id}`;
+    const method = 'POST';
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    };
+    const body = JSON.stringify({ quantidade });
+
     try {
-      const response = await fetch(`http://localhost:8081/retirar-bilhete/${id}`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await fetch(`http://localhost:8081/${endpoint}`, { method, headers, body });
 
       if (response.ok) {
-        alert('Desinscrição realizada com sucesso');
-        setIsInscrito(false);
-        setCapacidade(capacidade + 1);
+        alert(`${modalType === 'inscrever' ? 'Inscrição' : 'Desinscrição'} realizada com sucesso`);
+        window.location.reload(); // Recarregar a página para atualizar a capacidade e os botões
       } else {
         const errorData = await response.json();
-        alert(`Erro: ${errorData.error || 'Não foi possível desinscrever'}`);
+        alert(`Erro: ${errorData.error || `Não foi possível ${modalType === 'inscrever' ? 'inscrever' : 'desinscrever'}`}`);
       }
     } catch (error) {
-      alert('Erro ao desinscrever');
+      alert(`Erro ao ${modalType === 'inscrever' ? 'inscrever' : 'desinscrever'}`);
     }
   };
 
@@ -180,14 +170,14 @@ function EventoDetalhesPage() {
             <div className="mt-6">
               {isInscrito ? (
                 <button
-                  onClick={handleDesinscrever}
+                  onClick={() => openModal('desinscrever')}
                   className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
                 >
                   Desinscrever
                 </button>
               ) : capacidade > 0 ? (
                 <button
-                  onClick={handleInscrever}
+                  onClick={() => openModal('inscrever')}
                   className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
                 >
                   Inscrever
@@ -202,6 +192,41 @@ function EventoDetalhesPage() {
           <p className="text-gray-600 mb-6">{evento.descricao}</p>
         </div>
       </div>
+      <Modal
+        isOpen={modalIsOpen}
+        onRequestClose={closeModal}
+        contentLabel={`${modalType === 'inscrever' ? 'Inscrever no' : 'Desinscrever do'} evento ${evento.nome_evento}`}
+        className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50"
+      >
+        <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+          <h2 className="text-2xl font-semibold mb-4">{modalType === 'inscrever' ? `Inscrever no evento ${evento.nome_evento}` : `Desinscrever do evento ${evento.nome_evento}`}</h2>
+          <div className="mb-4">
+            <label className="block mb-1 font-bold">Quantidade:</label>
+            <input
+              type="number"
+              min="1"
+              max={capacidade}
+              value={quantidade}
+              onChange={(e) => setQuantidade(parseInt(e.target.value))}
+              className="w-full p-2 border rounded"
+            />
+          </div>
+          <div className="flex justify-between">
+            <button
+              onClick={handleConfirm}
+              className={`px-4 py-2 rounded ${modalType === 'inscrever' ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'} text-white`}
+            >
+              Confirmar {modalType === 'inscrever' ? 'Inscrição' : 'Desinscrição'}
+            </button>
+            <button
+              onClick={closeModal}
+              className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+            >
+              Sair
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
