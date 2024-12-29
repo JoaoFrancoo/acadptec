@@ -33,6 +33,7 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, './imagens')));
+app.use('/uploadsEventos', express.static(path.join(__dirname, './imagensEvento')));
 
 const db = mysql.createConnection({
   host: process.env.DB_HOST,
@@ -60,8 +61,30 @@ const dbQuery = (sql, params) => {
     });
   });
 };
+const storage2 = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.resolve(__dirname, '../backend/imagensEvento'));
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname));
+  },
+});
 
-// Configuração do multer
+const upload2 = multer({
+  storage: storage2,
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+
+    if (extname && mimetype) {
+      cb(null, true);
+    } else {
+      cb(new Error('Apenas imagens são permitidas'));
+    }
+  },
+});
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, path.resolve(__dirname, '../backend/imagens'));
@@ -86,9 +109,6 @@ const upload = multer({
   },
 });
 
-// Rotas da aplicação
-
-// Listar usuários
 app.get('/users', (req, res) => {
   const sql = "SELECT * FROM organizadores";
   db.query(sql, (err, data) => {
@@ -193,29 +213,44 @@ app.get('/admin/eventos', async (req, res) => {
     res.status(500).json({ message: 'Erro ao buscar eventos' });
   }
 });
+// Rota para criar eventos com upload de imagem
+app.post('/admin/eventos', authMiddleware, upload2.single('imagem'), async (req, res) => {
+  const { nome, id_categoria, id_organizadores, id_sala, data_inicio, data_fim, user_id, breve_desc, descricao } = req.body;
+  const imagem = req.file ? req.file.filename : null;
 
-app.post('/admin/eventos', async (req, res) => {
-  const { nome, id_categoria, id_organizadores, id_sala, data_inicio, data_fim, user_id } = req.body;
+  // Adicionando logs para verificar o estado de req.file e imagem
+  console.log('req.file:', req.file);
+  console.log('Nome do arquivo da imagem:', imagem);
+
+  if (!imagem) {
+    return res.status(400).json({ message: 'Imagem é obrigatória' });
+  }
 
   const sqlEvento = `
-    INSERT INTO eventos (nome, data_inicio, data_fim, id_categoria, id_organizadores, id_sala)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO eventos (nome, data_inicio, data_fim, id_categoria, id_organizador, id_sala, foto, breve_desc, descricao)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   try {
-    // Insere o evento
-    const eventoResult = await dbQuery(sqlEvento, [nome, data_inicio, data_fim, id_categoria, id_organizadores, id_sala]);
+    const eventoResult = await dbQuery(sqlEvento, [nome, data_inicio, data_fim, id_categoria, id_organizadores, id_sala, imagem, breve_desc, descricao]);
     const eventoId = eventoResult.insertId;
 
-    // Insere palestrantes na tabela EventosPalestrantes usando user_id da tabela login
+    console.log('Evento criado com ID:', eventoId); // Log para verificar se o evento foi criado
+
     const sqlEventosPalestrantes = `
-      INSERT INTO EventosPalestrantes (evento_id, palestrante_id)
+      INSERT INTO eventopalestrante (id_evento, id_palestrante)
       VALUES (?, ?)
     `;
 
+    // Verificação do array de user_id
+    console.log('Array de user_id:', user_id);
+
     for (const palestranteUserId of user_id) {
       console.log('Inserindo palestrante com user_id:', palestranteUserId); // Adicionando log para verificar o user_id
-      await dbQuery(sqlEventosPalestrantes, [eventoId, palestranteUserId]);
+      await dbQuery(sqlEventosPalestrantes, [eventoId, palestranteUserId])
+        .catch(err => {
+          console.error(`Erro ao inserir palestrante ${palestranteUserId}:`, err);
+        });
     }
 
     res.json({ message: 'Evento criado com sucesso!' });
@@ -224,6 +259,7 @@ app.post('/admin/eventos', async (req, res) => {
     res.status(500).json({ message: 'Erro ao criar evento' });
   }
 });
+
 
 // Endpoint para buscar categorias, organizadores e salas
 app.get('/admin/opcoes',authMiddleware, async (req, res) => {
@@ -333,23 +369,83 @@ app.put('/user/me/update', authMiddleware, upload.single('foto'), (req, res) => 
     res.json({ message: 'Dados atualizados com sucesso!' });
   });
 });
-// Obter detalhes de um evento específico
-app.get('/eventos/:id', (req, res) => {
-  const { id } = req.params;
+
+app.get('/eventos/', (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const offset = (page - 1) * limit;
 
   const sql = `
     SELECT e.id_evento, e.nome AS nome_evento, e.data_inicio, e.data_fim, 
-           c.descricao AS categoria, s.nome_sala, s.capacidade
+           e.foto, e.breve_desc
+    FROM eventos e
+    LIMIT ? OFFSET ?
+  `;
+
+  db.query(sql, [limit, offset], (err, data) => {
+    if (err) {
+      return res.status(500).json({ error: 'Erro ao buscar eventos' });
+    }
+
+    // Construir a URL completa das fotos
+    data.forEach(evento => {
+      evento.foto = evento.foto ? `${req.protocol}://${req.get('host')}/uploadsEventos/${evento.foto}` : null;
+    });
+
+    // Total de eventos para paginação
+    const sqlTotal = 'SELECT COUNT(*) AS total FROM eventos';
+    db.query(sqlTotal, (err, result) => {
+      if (err) {
+        return res.status(500).json({ error: 'Erro ao contar eventos' });
+      }
+
+      const total = result[0].total;
+      const totalPages = Math.ceil(total / limit);
+
+      res.json({
+        eventos: data,
+        totalPages: totalPages,
+        currentPage: page
+      });
+    });
+  });
+});
+
+app.get('/eventos/:id', (req, res) => {
+  const { id } = req.params;
+
+  const sqlEvento = `
+    SELECT e.id_evento, e.nome AS nome_evento, e.data_inicio, e.data_fim, 
+           e.foto, e.descricao, c.descricao AS categoria, s.nome_sala, s.capacidade
     FROM eventos e
     JOIN salas s ON e.id_sala = s.id_sala
     JOIN categorias c ON e.id_categoria = c.id_categoria
     WHERE e.id_evento = ?;
   `;
 
-  db.query(sql, [id], (err, data) => {
+  const sqlPalestrantes = `
+    SELECT l.user_id, l.nome
+    FROM login l
+    INNER JOIN eventopalestrante ep ON l.user_id = ep.id_palestrante
+    WHERE ep.id_evento = ?;
+  `;
+
+  db.query(sqlEvento, [id], (err, eventoData) => {
     if (err) return res.status(500).json({ error: 'Erro ao buscar evento' });
-    if (data.length === 0) return res.status(404).json({ error: 'Evento não encontrado' });
-    res.json(data[0]);
+    if (eventoData.length === 0) return res.status(404).json({ error: 'Evento não encontrado' });
+
+    const evento = eventoData[0];
+
+    // Construir a URL completa da foto
+    evento.foto = evento.foto ? `${req.protocol}://${req.get('host')}/uploadsEventos/${evento.foto}` : null;
+
+    db.query(sqlPalestrantes, [id], (err, palestrantesData) => {
+      if (err) return res.status(500).json({ error: 'Erro ao buscar palestrantes' });
+
+      evento.palestrantes = palestrantesData;
+
+      res.json(evento);
+    });
   });
 });
 

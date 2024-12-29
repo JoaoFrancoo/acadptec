@@ -14,8 +14,12 @@ const CriarEventos = () => {
     id_sala: '',
     nome: '',
     data_inicio: '',
-    data_fim: ''
+    data_fim: '',
+    breve_desc: '', // Novo campo
+    descricao: '', // Novo campo
+    imagem: null
   });
+  const [previewImage, setPreviewImage] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const token = localStorage.getItem('token');
@@ -58,19 +62,40 @@ const CriarEventos = () => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
-
+  
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    setFormData((prev) => ({ ...prev, imagem: file }));
+  
+    // Previsualização da imagem
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreviewImage(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+  
   const handleMultiSelectChange = (e) => {
     const { name, selectedOptions } = e.target;
     const values = Array.from(selectedOptions, option => option.value);
     setFormData((prev) => ({ ...prev, [name]: values }));
   };
-
+  
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log('Dados do formulário a serem enviados:', formData);
     console.log('Token JWT enviado:', token);
-
-    api.post('/admin/eventos', formData)
+  
+    const data = new FormData();
+    for (const key in formData) {
+      data.append(key, formData[key]);
+    }
+  
+    api.post('/admin/eventos', data, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
       .then((res) => {
         alert(res.data.message);
       })
@@ -78,11 +103,11 @@ const CriarEventos = () => {
         console.error('Erro ao criar evento:', err);
       });
   };
-
+  
   if (loading) {
     return <div className="text-center text-xl mt-12">Carregando opções...</div>;
   }
-
+  
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg">
       <h1 className="text-3xl font-semibold text-center text-gray-800 mb-6">Adicionar Novo Evento</h1>
@@ -99,7 +124,7 @@ const CriarEventos = () => {
             className="w-full p-3 mt-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-
+  
         {/* Categoria */}
         <div>
           <label htmlFor="id_categoria" className="block text-lg font-medium text-gray-700">Categoria:</label>
@@ -119,7 +144,7 @@ const CriarEventos = () => {
             ))}
           </select>
         </div>
-
+  
         {/* Organizadores */}
         <div>
           <label htmlFor="id_organizadores" className="block text-lg font-medium text-gray-700">Organizadores:</label>
@@ -139,7 +164,7 @@ const CriarEventos = () => {
             ))}
           </select>
         </div>
-
+  
         {/* Palestrantes */}
         <div>
           <label htmlFor="user_id" className="block text-lg font-medium text-gray-700">Palestrantes:</label>
@@ -159,7 +184,7 @@ const CriarEventos = () => {
             ))}
           </select>
         </div>
-
+  
         {/* Sala */}
         <div>
           <label htmlFor="id_sala" className="block text-lg font-medium text-gray-700">Sala:</label>
@@ -179,7 +204,7 @@ const CriarEventos = () => {
             ))}
           </select>
         </div>
-
+  
         {/* Data Início */}
         <div>
           <label htmlFor="data_inicio" className="block text-lg font-medium text-gray-700">Data de Início:</label>
@@ -193,7 +218,7 @@ const CriarEventos = () => {
             className="w-full p-3 mt-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-
+  
         {/* Data Fim */}
         <div>
           <label htmlFor="data_fim" className="block text-lg font-medium text-gray-700">Data de Fim:</label>
@@ -207,7 +232,50 @@ const CriarEventos = () => {
             className="w-full p-3 mt-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-
+  
+        {/* Breve Descrição */}
+        <div className="col-span-2">
+          <label htmlFor="breve_desc" className="block text-lg font-medium text-gray-700">Breve Descrição:</label>
+          <input
+            type="text"
+            name="breve_desc"
+            id="breve_desc"
+            value={formData.breve_desc}
+            onChange={handleInputChange}
+            required
+            className="w-full p-3 mt-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+  
+        {/* Descrição */}
+        <div className="col-span-2">
+          <label htmlFor="descricao" className="block text-lg font-medium text-gray-700">Descrição:</label>
+          <textarea
+            name="descricao"
+            id="descricao"
+            value={formData.descricao}
+            onChange={handleInputChange}
+            required
+            className="w-full p-3 mt-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            rows="4"
+          />
+        </div>
+  
+        {/* Imagem */}
+        <div className="col-span-2">
+          <label htmlFor="imagem" className="block text-lg font-medium text-gray-700">Imagem do Evento:</label>
+          <input
+            type="file"
+            name="imagem"
+            id="imagem"
+            onChange={handleImageChange}
+            className="w-full p-3 mt-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          {previewImage && (
+            <img src={previewImage} alt="Pré-visualização" className="mt-4 w-full h-auto rounded-lg" />
+          )}
+        </div>
+  
         {/* Botão de Enviar */}
         <div className="col-span-2 text-center mt-6">
           <button
@@ -220,6 +288,7 @@ const CriarEventos = () => {
       </form>
     </div>
   );
-};
-
-export default CriarEventos;
+  };
+  
+  export default CriarEventos;
+  
