@@ -9,7 +9,7 @@ function EventoDetalhesPage() {
   useAuth();
   const { id } = useParams();
   const [evento, setEvento] = useState(null);
-  const [isInscrito, setIsInscrito] = useState(false);
+  const [inscricao, setInscricao] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [capacidade, setCapacidade] = useState(0);
@@ -38,10 +38,10 @@ function EventoDetalhesPage() {
 
           if (inscricaoResponse.ok) {
             const inscricaoData = await inscricaoResponse.json();
-            const inscrito = inscricaoData.inscricoes.some(
-              (inscricao) => inscricao.id_evento === parseInt(id) && inscricao.visivel === 1
+            const inscricao = inscricaoData.inscricoes.find(
+              (inscricao) => inscricao.id_evento === parseInt(id)
             );
-            setIsInscrito(inscrito);
+            setInscricao(inscricao);
           }
         }
       } catch (error) {
@@ -167,25 +167,29 @@ function EventoDetalhesPage() {
                 </tr>
               </tbody>
             </table>
-            <div className="mt-6">
-              {isInscrito ? (
-                <button
-                  onClick={() => openModal('desinscrever')}
-                  className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-                >
-                  Desinscrever
-                </button>
-              ) : capacidade > 0 ? (
-                <button
-                  onClick={() => openModal('inscrever')}
-                  className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-                >
-                  Inscrever
-                </button>
-              ) : (
-                <p className="text-red-500 font-semibold">Esgotado</p>
-              )}
-            </div>
+            <div className="mt-6 flex justify-between">
+  {capacidade > 0 && (
+    <button
+      onClick={() => openModal('inscrever')}
+      className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+    >
+      {inscricao?.quantidade > 0 ? 'Comprar Mais' : 'Inscrever'}
+    </button>
+  )}
+  {inscricao?.quantidade > 0 && (
+    <button
+      onClick={() => openModal('desinscrever')}
+      className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+    >
+      Desinscrever
+    </button>
+  )}
+  {capacidade === 0 && (
+    <p className="text-red-500 font-semibold">Esgotado</p>
+  )}
+</div>
+
+
           </div>
         </div>
         <div className="mt-8">
@@ -205,7 +209,7 @@ function EventoDetalhesPage() {
             <input
               type="number"
               min="1"
-              max={capacidade}
+              max={modalType === 'inscrever' ? capacidade : inscricao ? inscricao.quantidade : 0}
               value={quantidade}
               onChange={(e) => setQuantidade(parseInt(e.target.value))}
               className="w-full p-2 border rounded"
@@ -232,3 +236,4 @@ function EventoDetalhesPage() {
 }
 
 export default EventoDetalhesPage;
+

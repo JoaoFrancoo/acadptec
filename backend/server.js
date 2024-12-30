@@ -173,7 +173,6 @@ app.post('/comprar-bilhete/:id_evento', authMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Erro ao comprar bilhete' });
   }
 });
-
 app.post('/retirar-bilhete/:id_evento', authMiddleware, async (req, res) => {
   const { id_evento } = req.params;
   const { quantidade } = req.body;
@@ -229,7 +228,6 @@ app.post('/retirar-bilhete/:id_evento', authMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Erro ao retirar bilhete' });
   }
 });
-
 
 // Listar eventos
 app.get('/admin/eventos', async (req, res) => {
