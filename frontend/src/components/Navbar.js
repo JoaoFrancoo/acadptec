@@ -28,17 +28,15 @@ const Navbar = ({ userId, userLevel }) => {
           <ul className="flex space-x-8">
             <li>
               <Link to="/" className="text-black hover:text-gray-700 transition-colors">Home</Link>
-            </li>
-            {userLevel === undefined && (
-              <>
+            </li>           
+              
                 <li>
                   <Link to="/login" className="text-black hover:text-gray-700 transition-colors">Login</Link>
                 </li>
                 <li>
                   <Link to="/register" className="text-black hover:text-gray-700 transition-colors">Registrar</Link>
-                </li>
-              </>
-            )}
+                </li>             
+            
             {userLevel >= 2 && (
               <li>
                 <Link to="/eventos" className="text-black hover:text-gray-700 transition-colors">Eventos</Link>
