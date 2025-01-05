@@ -1,16 +1,35 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 
 const Navbar = ({ userId, userLevel }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isEventDropdownOpen, setIsEventDropdownOpen] = useState(false);
+  const eventDropdownRef = useRef(null);
 
   useEffect(() => {
     console.log('User ID:', userId);
     console.log('User Level:', userLevel);
   }, [userId, userLevel]);
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (eventDropdownRef.current && !eventDropdownRef.current.contains(event.target)) {
+        setIsEventDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [eventDropdownRef]);
+
   const handleDropdownToggle = () => {
     setIsDropdownOpen(!isDropdownOpen);
+  };
+
+  const handleEventDropdownToggle = () => {
+    setIsEventDropdownOpen(!isEventDropdownOpen);
   };
 
   const handleLogout = () => {
@@ -28,18 +47,39 @@ const Navbar = ({ userId, userLevel }) => {
           <ul className="flex space-x-8">
             <li>
               <Link to="/" className="text-black hover:text-gray-700 transition-colors">Home</Link>
-            </li>           
-              
-                <li>
-                  <Link to="/login" className="text-black hover:text-gray-700 transition-colors">Login</Link>
-                </li>
-                <li>
-                  <Link to="/register" className="text-black hover:text-gray-700 transition-colors">Registrar</Link>
-                </li>             
-            
+            </li>
+            <li>
+              <Link to="/login" className="text-black hover:text-gray-700 transition-colors">Login</Link>
+            </li>
+            <li>
+              <Link to="/register" className="text-black hover:text-gray-700 transition-colors">Registrar</Link>
+            </li>
             {userLevel >= 2 && (
-              <li>
-                <Link to="/eventos" className="text-black hover:text-gray-700 transition-colors">Eventos</Link>
+              <li className="relative" ref={eventDropdownRef}>
+                <button
+                  onClick={handleEventDropdownToggle}
+                  className="text-black hover:text-gray-700 transition-colors"
+                >
+                  Eventos
+                </button>
+                {isEventDropdownOpen && (
+                  <div className="absolute right-0 mt-2 py-2 w-48 bg-white rounded-md shadow-lg border border-gray-200">
+                    <ul>
+                      <li>
+                        <Link to="/eventos" className="block px-4 py-2 text-black hover:bg-gray-100">
+                          Ver Eventos
+                        </Link>
+                      </li>
+                      {userLevel >= 3 && (
+                        <li>
+                          <Link to="/criarEventos" className="block px-4 py-2 text-black hover:bg-gray-100">
+                            Criar Evento
+                          </Link>
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                )}
               </li>
             )}
             {userLevel >= 3 && (
@@ -61,16 +101,10 @@ const Navbar = ({ userId, userLevel }) => {
                   Perfil
                 </button>
                 {isDropdownOpen && (
-                  <div
-                    className="absolute right-0 mt-2 py-2 w-48 bg-white rounded-md shadow-lg border border-gray-200"
-                    onClick={() => setIsDropdownOpen(false)} // Fecha o dropdown ao clicar
-                  >
+                  <div className="absolute right-0 mt-2 py-2 w-48 bg-white rounded-md shadow-lg border border-gray-200">
                     <ul>
                       <li>
-                        <Link
-                          to="/perfil"
-                          className="block px-4 py-2 text-black hover:bg-gray-100"
-                        >
+                        <Link to="/perfil" className="block px-4 py-2 text-black hover:bg-gray-100">
                           Ver Perfil
                         </Link>
                       </li>

@@ -313,7 +313,7 @@ app.get('/admin/opcoes',authMiddleware, async (req, res) => {
     console.log('Categorias recuperadas:', categorias);
     
 
-    const organizadores = await dbQuery('SELECT id_organizador, nome FROM organizadores');
+    const organizadores = await dbQuery('SELECT user_id, nome FROM login WHERE nivel = 3');
     console.log('Organizadores recuperados:', organizadores);
 
     const salas = await dbQuery('SELECT id_sala, nome_sala FROM salas');
