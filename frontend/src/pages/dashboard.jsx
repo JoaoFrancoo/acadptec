@@ -10,7 +10,6 @@ function AdminDashboard() {
   const [categorias, setCategorias] = useState([]);
   const [salas, setSalas] = useState([]);
   const [organizadores, setOrganizadores] = useState([]);
-  const [clientesOrganizadores, setClientesOrganizadores] = useState([]);
   const [selectedSection, setSelectedSection] = useState('clientes');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -50,7 +49,6 @@ function AdminDashboard() {
         categoriasRes,
         salasRes,
         organizadoresRes,
-        clientesOrganizadoresRes,
       ] = await Promise.all([
         api.get('admin/clientes'),
         api.get('admin/eventos'),
@@ -58,7 +56,6 @@ function AdminDashboard() {
         api.get('admin/categorias'),
         api.get('admin/salas'),
         api.get('admin/organizadores'),
-        api.get('admin/clientesOrganizadores')
       ]);
 
       setClientes(clientesRes.data);
@@ -67,11 +64,8 @@ function AdminDashboard() {
       setCategorias(categoriasRes.data);
       setSalas(salasRes.data);
       setOrganizadores(organizadoresRes.data);
-      setClientesOrganizadores(clientesOrganizadoresRes.data);
-      console.log(organizadoresRes.data); // Verifique os dados dos organizadores no console
       setError(null);
     } catch (err) {
-      console.error('Erro ao carregar os dados:', err);
       setError('Erro ao carregar os dados');
     } finally {
       setLoading(false);
@@ -79,27 +73,32 @@ function AdminDashboard() {
   };
 
   const handleEdit = async (id, updatedData, section) => {
-    try {
-      await api.put(`admin/${section}/${id}`, updatedData);
-      fetchData();
-    } catch (err) {
-      console.error('Erro ao salvar as alterações:', err);
-      setError('Erro ao salvar as alterações.');
-    }
-  };
+    const allowedFields = ['user_id', 'nome', 'email', 'status'];
+    const sanitizedData = Object.keys(updatedData)
+      .filter((key) => allowedFields.includes(key))
+      .reduce((obj, key) => {
+        obj[key] = updatedData[key];
+        return obj;
+      }, {});
+  
+      try {
+        const response = await api.put(`admin/${section}/${id}`, sanitizedData);
+        console.log('Resposta do servidor:', response.data);
+        fetchData();
+      } catch (err) {
+        console.error('Erro na requisição PUT:', err);
+        setError('Erro ao salvar as alterações.');
+      }
+    };
+  
 
   const handleInputChange = (e, item, section) => {
     const { name, value } = e.target;
     const updatedItem = { ...item, [name]: value };
-  
+
+    console.log('Mudança no input:', { name, value, item });
+
     switch (section) {
-      case 'clientes':
-        setClientes((prevClientes) =>
-          prevClientes.map((cliente) =>
-            cliente.user_id === item.user_id ? updatedItem : cliente
-          )
-        );
-        break;
       case 'eventos':
         setEventos((prevEventos) =>
           prevEventos.map((evento) =>
@@ -107,10 +106,10 @@ function AdminDashboard() {
           )
         );
         break;
-      case 'palestrantes':
-        setPalestrantes((prevPalestrantes) =>
-          prevPalestrantes.map((palestrante) =>
-            palestrante.user_id === item.user_id ? updatedItem : palestrante
+      case 'clientes':
+        setClientes((prevClientes) =>
+          prevClientes.map((cliente) =>
+            cliente.user_id === item.user_id ? updatedItem : cliente
           )
         );
         break;
@@ -135,13 +134,24 @@ function AdminDashboard() {
           )
         );
         break;
+     case 'palestrantes':
+      setPalestrantes((prev) =>
+        prev.map((palestrante) =>
+          palestrante.user_id === item.user_id ? updatedItem : palestrante
+        )
+      );
+      break;
       default:
         break;
     }
   };
-  
-  // Modificando o campo "id_organizador" e "user_id" no renderEditableRow
-  
+
+  const formatDate = (date) => {
+    if (!date) return '';
+    const newDate = new Date(date);
+    return newDate.toISOString().slice(0, 16);
+  };
+
   const renderEditableRow = (item, section) => {
     const idField =
       section === 'clientes'
@@ -157,151 +167,266 @@ function AdminDashboard() {
         : section === 'palestrantes'
         ? 'user_id'
         : 'id';
-  
+
     return (
       <tr key={item[idField]}>
         {Object.keys(item).map((key) => {
-          if (section === 'palestrantes' && (key === 'user_id' || key === 'nome')) return null;
-          if (key.includes('id') && section !== 'palestrantes' && section !== 'organizadores') return null;
-  
-          if (section === 'organizadores' && key === 'id_organizador') {
+          if (section === 'palestrantes' && (key === 'user_id' || key ==='nome')) return null;
+          if (key.includes('id') && section !== 'palestrantes') return null;
+          if (key === 'data_inicio' || key === 'data_fim') {
             return (
               <td key={key}>
-                {/* O id_organizador (PK) não é editável */}
                 <input
-                  type="text"
+                  type="datetime-local"
                   name={key}
-                  value={item[key]}
-                  readOnly
+                  value={formatDate(item[key])}
+                  onChange={(e) => handleInputChange(e, item, section)}
                   className="border rounded p-1 w-full"
                 />
               </td>
             );
           }
-  
-          if (section === 'organizadores' && key === 'user_id') {
-            return (
-              <td key={key}>
-                <select
-                  name="user_id"
-                  value={item.user_id || ''}
-                  onChange={(e) => {
-                    const userId = parseInt(e.target.value, 10);
-                    const user = clientes.find(
-                      (cliente) => cliente.user_id === userId
-                    );
-                    const updatedItem = {
-                      ...item,
-                      user_id: userId,
-                      nome: user ? user.nome : item.nome,
-                      // O departamento não deve ser alterado, mantendo o valor atual
-                      id_departamento: item.id_departamento,
-                    };
-                    handleInputChange(e, updatedItem, section);
-                  }}
-                  className="border rounded p-1 w-full"
-                >
-                  <option value="">Selecione...</option>
-                  {clientes
-                  .filter((cliente) => cliente.nivel === 3)
-                  .map((cliente) => (
-                    <option key={cliente.user_id} value={cliente.user_id}>
-                      {cliente.nome}
-                    </option>
-                  ))}
-                </select>
-              </td>
-            );
-          }
-  
-          if (section === 'organizadores' && key === 'id_departamento') {
-            return (
-              <td key={key}>
-                {/* O id_departamento não deve ser alterado, então ele é apenas exibido */}
-                <input
-                  type="text"
-                  name={key}
-                  value={item[key]}
-                  readOnly
-                  className="border rounded p-1 w-full"
-                />
-              </td>
-            );
-          }
-  
-          // Renderizar os campos normalmente para outras seções
-          return (
-            <td key={key}>
-              <input
-                type="text"
-                name={key}
-                value={item[key] || ''}
-                onChange={(e) => handleInputChange(e, item, section)}
-                className="border rounded p-1 w-full"
-              />
-            </td>
-          );
-        })}
-        <td>
-          <button
-            onClick={() => handleEdit(item[idField], item, section)}
-            className="px-4 py-2 bg-slate-400 text-white rounded shadow hover:bg-blue-300"
-          >
-            Salvar
-          </button>
-        </td>
-      </tr>
-    );
-  };
-  
 
-  return (
-    <div>
-      {loading ? (
-        <p>Carregando...</p>
-      ) : error ? (
-        <p>{error}</p>
-      ) : (
-        <div>
-          <h1>Painel Administrativo</h1>
-          <select onChange={(e) => setSelectedSection(e.target.value)} value={selectedSection}>
-            <option value="clientes">Clientes</option>
-            <option value="eventos">Eventos</option>
-            <option value="palestrantes">Palestrantes</option>
-            <option value="categorias">Categorias</option>
-            <option value="salas">Salas</option>
-            <option value="organizadores">Organizadores</option>
-          </select>
-          <table>
-            <thead>
-              <tr>
-                {Object.keys(
-                  selectedSection === 'clientes' ? clientes[0] || {} :
-                  selectedSection === 'eventos' ? eventos[0] || {} :
-                  selectedSection === 'palestrantes' ? palestrantes[0] || {} :
-                  selectedSection === 'categorias' ? categorias[0] || {} :
-                  selectedSection === 'salas' ? salas[0] || {} :
-                  selectedSection === 'organizadores' ? organizadores[0] || {} : {}
-                ).map((key) => (
-                  <th key={key}>{key}</th>
-                ))}
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(selectedSection === 'clientes' ? clientes :
-                selectedSection === 'eventos' ? eventos :
-                selectedSection === 'palestrantes' ? palestrantes :
-                selectedSection === 'categorias' ? categorias :
-                selectedSection === 'salas' ? salas :
-                selectedSection === 'organizadores' ? organizadores : []
-              ).map((item) => renderEditableRow(item, selectedSection))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
+          if (section === 'eventos') {
+            if (key === 'categoria_nome') {
+              return (
+                <td key={key}>
+                  <select
+                    name="id_categoria"
+                    value={item.id_categoria || ''}
+                    onChange={(e) => {
+                      const categoriaId = parseInt(e.target.value, 10); 
+                      const categoria = categorias.find(
+                        (categoria) => categoria.id_categoria === categoriaId
+                      );
+                      const updatedItem = {
+                        ...item,
+                        id_categoria: categoriaId,
+                        categoria_nome: categoria ? categoria.descricao : item.categoria_nome,
+                      };
+                      handleInputChange(e, updatedItem, section);
+                    }}
+                    className="border rounded p-1 w-full"
+                  >
+                    <option value={item.id_categoria || ''}>
+                      {item.categoria_nome || 'Selecione...'}
+                    </option>
+                    {categorias.map((categoria) => (
+                      <option key={categoria.id_categoria} value={categoria.id_categoria}>
+                        {categoria.descricao}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+              );
+            }
+
+            if (key === 'sala_nome') {
+              return (
+                <td key={key}>
+                  <select
+                    name="id_sala"
+                    value={item.id_sala || ''}
+                    onChange={(e) => {
+                      const sala = salas.find((sala) => sala.id_sala === e.target.value);
+                      const updatedItem = {
+                        ...item,
+                        id_sala: e.target.value,
+                        sala_nome: sala ? sala.nome_sala : item.sala_nome,
+                      };
+                      handleInputChange(e, updatedItem, section);
+                    }}
+                    className="border rounded p-1 w-full"
+                  >
+                    <option value={item.id_sala || ''}>
+                      {item.sala_nome || 'Selecione...'}
+                    </option>
+                    {salas.map((sala) => (
+                      <option key={sala.id_sala} value={sala.id_sala}>
+                        {sala.nome_sala}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+              );
+            }
+
+            if (key === 'organizador_nome') {
+              return (
+                <td key={key}>
+                  <select
+                   
+                   name="id_organizador"
+                   value={item.id_organizador || ''}
+                   onChange={(e) => {
+                     const organizador = organizadores.find(
+                       (organizador) => organizador.id_organizador === e.target.value
+                     );
+                     const updatedItem = {
+                       ...item,
+                       id_organizador: e.target.value,
+                       organizador_nome: organizador ? organizador.nome : item.organizador_nome,
+                     };
+                     handleInputChange(e, updatedItem, section);
+                   }}
+                   className="border rounded p-1 w-full"
+                 >
+                   <option value={item.id_organizador || ''}>
+                     {item.organizador_nome || 'Selecione...'}
+                   </option>
+                   {organizadores.map((organizador) => (
+                     <option key={organizador.id_organizador} value={organizador.id_organizador}>
+                       {organizador.nome}
+                     </option>
+                   ))}
+                 </select>
+               </td>
+             );
+           }
+         }
+
+         if (section === 'palestrantes' && key === 'id_cliente') {
+           return (
+             <td key={key}>
+               <select
+                 name="user_id"
+                 value={item.user_id || ''}
+                 onChange={(e) => {
+                  const selectedUserId = parseInt(e.target.value, 10) || 0;
+                  const cliente = clientes.find(
+                    (cliente) => cliente.user_id === selectedUserId
+                  );
+                  const updatedItem = {
+                    ...item,
+                    user_id: selectedUserId,
+                    nome: cliente ? cliente.nome : item.nome,
+                  };
+
+                  setPalestrantes((prev) =>
+                    prev.map((palestrante) =>
+                    palestrante.id_palestrante === item.id_palestrante
+                    ? {
+                        ...palestrante,
+                        user_id: selectedUserId,
+                        nome: cliente ? cliente.nome : palestrante.nome,
+                    }
+                    : palestrante
+                  )
+                );
+                
+                }}
+                
+                
+                 className="border rounded p-1 w-full"
+               >
+                 <option value="">Selecione...
+                 </option>
+                 {clientes
+                   .filter((cliente) => cliente.nivel === 2)
+                   .map((cliente) => (
+                     <option key={cliente.user_id} value={cliente.user_id}>
+                       {cliente.nome}
+                     </option>
+                   ))}
+               </select>
+             </td>
+           );
+         }
+
+         return (
+           <td key={key}>
+             <input
+               type="text"
+               name={key}
+               value={item[key] || ''}
+               onChange={(e) => handleInputChange(e, item, section)}
+               className="border rounded p-1 w-full"
+             />
+           </td>
+         );
+       })}
+       <td>
+         <button
+           onClick={() => handleEdit(item[idField], item, section)}
+           className="px-4 py-2 bg-slate-400 text-white rounded shadow hover:bg-blue-300"
+         >
+           Salvar
+         </button>
+       </td>
+     </tr>
+   );
+ };
+
+ const renderSection = () => {
+   const dataMap = {
+     clientes,
+     eventos,
+     palestrantes,
+     categorias,
+     salas,
+     organizadores,
+   };
+
+   const data = dataMap[selectedSection];
+
+   return (
+     <table className="min-w-full border-collapse">
+       <thead>
+         <tr>
+           {Object.keys(data[0] || {})
+           .filter((key) => !(selectedSection === 'palestrantes' && (key === 'user_id' || key === 'nome')))
+           .filter((key) => !(selectedSection === 'clientes' && (key === 'user_id')))
+           .filter((key) => !(selectedSection === 'eventos' && (key === 'id_evento')))
+           .filter((key) => !(selectedSection === 'categorias' && (key === 'id_categoria')))
+           .filter((key) => !(selectedSection === 'salas' && (key === 'id_sala' || key === 'capacidade')))
+           .filter((key) => !(selectedSection === 'organizadores' && (key === 'id_organizador')))
+           .map((key) => (
+             <th key={key} className="border p-2 text-left">
+               {key}
+             </th>
+           ))}
+           <th className="border p-2 text-left">Ações</th>
+         </tr>
+       </thead>
+       <tbody>
+         {data.map((item) => renderEditableRow(item, selectedSection))}
+       </tbody>
+     </table>
+   );
+ };
+
+ if (loading) return <div>Carregando...</div>;
+ if (error) return <div>{error}</div>;
+
+ return (
+   <div className="flex">
+     {/* Barra Lateral */}
+     <div className="relative group bg-slate-500 text-white h-screen w-16 p-4 overflow-hidden transition-width duration-300 ease-in-out hover:w-64">
+       <h2 className="text-xl font-bold mb-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out">
+         Admin Dashboard
+       </h2>
+       <ul className="space-y-4 mt-8">
+         {['clientes', 'eventos', 'palestrantes', 'categorias', 'salas', 'organizadores'].map((section) => (
+           <li key={section}>
+             <button
+               onClick={() => setSelectedSection(section)}
+               className="w-full text-left py-2 px-4 hover:bg-gray-600 rounded transition-all duration-300 ease-in-out">
+               <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out">
+                 {section.charAt(0).toUpperCase() + section.slice(1)}
+               </span>
+             </button>
+           </li>
+         ))}
+       </ul>
+     </div>
+     
+     <div className="w-3/4 p-6 bg-gray-100">
+       {loading && <p>Carregando...</p>}
+       {error && <p className="text-red-500">{error}</p>}
+       {renderSection()}
+     </div>
+   </div>
+ );
 }
 
 export default AdminDashboard;
