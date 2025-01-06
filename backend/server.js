@@ -6,8 +6,11 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const path = require('path');
+const e = require('express');
 const app = express();
 require('dotenv').config();
+
+const port = process.env.PORT || 8081;
 
 const authMiddleware = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -336,6 +339,41 @@ app.get('/admin/opcoes',authMiddleware, async (req, res) => {
   }
 });
 
+// Endpoint para registrar usuário
+app.post('/register', upload.single('foto'), async (req, res) => {
+  const { email, nome, password } = req.body;
+  const foto = req.file;
+
+  if (!email || !nome || !password || !foto) {
+    return res.status(400).json({ message: 'Todos os campos são obrigatórios.' });
+  }
+
+  try {
+    // Encriptar a senha
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    // Inserir usuário no banco de dados
+    const query = `
+      INSERT INTO login (email, nome, password, foto) 
+      VALUES (?, ?, ?, ?)
+    `;
+
+    const fotoPath = path.join(__dirname, foto.path); // Caminho para salvar no banco
+
+    db.query(query, [email, nome, hashedPassword, fotoPath], (err, result) => {
+      if (err) {
+        console.error('Erro ao inserir no banco:', err);
+        return res.status(500).json({ message: 'Erro no servidor. Tente novamente mais tarde.' });
+      }
+      res.status(201).json({ message: 'Usuário registrado com sucesso!' });
+    });
+  } catch (err) {
+    console.error('Erro ao processar registro:', err);
+    res.status(500).json({ message: 'Erro no servidor. Tente novamente mais tarde.' });
+  }
+});
+
 // Login
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
@@ -598,6 +636,7 @@ app.get('/patrocinadores/:id', async (req, res) => {
 
 // DASHBOARD SIDE - Rotas do Administrador
 // Middleware de autenticação
+  app.use(express.json());
   app.use('/admin', authMiddleware);
 
   // Função utilitária para construir queries dinamicamente
