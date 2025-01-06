@@ -115,174 +115,176 @@ const CriarEventos = () => {
   }
 
   return (
-    <div className="p-8">
-      <h1 className="text-4xl font-bold text-center text-gray-800 mb-8">Adicionar Novo Evento</h1>
-      <form onSubmit={handleSubmit} className="flex flex-wrap -mx-2">
-        
-        <div className="flex-grow px-2 mb-4 min-w-min">
-          <label htmlFor="nome" className="block text-lg font-medium text-gray-700 mb-2">Nome do Evento:</label>
-          <input
-            type="text"
-            name="nome"
-            id="nome"
-            value={formData.nome}
-            onChange={handleInputChange}
-            required
-            className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+    <div className="flex flex-col lg:flex-row min-h-screen bg-gray-100 p-8">
+      <div className="flex-1 flex flex-col justify-center items-start bg-white p-8 rounded-lg shadow-lg max-w-4xl mx-auto">
+        <h1 className="text-4xl font-bold text-blue-600 mb-6">Adicionar Novo Evento</h1>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          
+          <div>
+            <label htmlFor="nome" className="block text-lg font-medium text-gray-700 mb-2">Nome do Evento:</label>
+            <input
+              type="text"
+              name="nome"
+              id="nome"
+              value={formData.nome}
+              onChange={handleInputChange}
+              required
+              className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
 
-        <div className="flex-grow px-2 mb-4 min-w-min">
-          <label htmlFor="id_categoria" className="block text-lg font-medium text-gray-700 mb-2">Categoria:</label>
-          <select
-            name="id_categoria"
-            id="id_categoria"
-            value={formData.id_categoria}
-            onChange={handleInputChange}
-            required
-            className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Selecione uma Categoria</option>
-            {categorias.map((categoria) => (
-              <option key={categoria.id_categoria} value={categoria.id_categoria}>
-                {categoria.descricao}
-              </option>
-            ))}
-          </select>
-        </div>
+          <div>
+            <label htmlFor="id_categoria" className="block text-lg font-medium text-gray-700 mb-2">Categoria:</label>
+            <select
+              name="id_categoria"
+              id="id_categoria"
+              value={formData.id_categoria}
+              onChange={handleInputChange}
+              required
+              className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Selecione uma Categoria</option>
+              {categorias.map((categoria) => (
+                <option key={categoria.id_categoria} value={categoria.id_categoria}>
+                  {categoria.descricao}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <div className="flex-grow px-2 mb-4 min-w-min">
-          <label htmlFor="id_organizadores" className="block text-lg font-medium text-gray-700 mb-2">Organizador:</label>
-          <select
-            name="id_organizadores"
-            id="id_organizadores"
-            value={formData.id_organizadores}
-            onChange={handleInputChange}
-            required
-            className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Selecione um Organizador</option>
-            {organizadores.map((organizador) => (
-              <option key={organizador.user_id} value={organizador.user_id}>
-                {organizador.nome}
-              </option>
-            ))}
-          </select>
-        </div>
+          <div>
+            <label htmlFor="id_organizadores" className="block text-lg font-medium text-gray-700 mb-2">Organizador:</label>
+            <select
+              name="id_organizadores"
+              id="id_organizadores"
+              value={formData.id_organizadores}
+              onChange={handleInputChange}
+              required
+              className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Selecione um Organizador</option>
+              {organizadores.map((organizador) => (
+                <option key={organizador.user_id} value={organizador.user_id}>
+                  {organizador.nome}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <div className="flex-grow px-2 mb-4 min-w-min">
-          <label htmlFor="user_id" className="block text-lg font-medium text-gray-700 mb-2">Palestrantes:</label>
-          <select
-            name="user_id"
-            id="user_id"
-            multiple
-            value={formData.user_id}
-            onChange={handleMultiSelectChange}
-            required
-            className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            {palestrantes.map((palestrante) => (
-              <option key={palestrante.user_id} value={palestrante.user_id}>
-                {palestrante.nome}
-              </option>
-            ))}
-          </select>
-        </div>
+          <div>
+            <label htmlFor="user_id" className="block text-lg font-medium text-gray-700 mb-2">Palestrantes:</label>
+            <select
+              name="user_id"
+              id="user_id"
+              multiple
+              value={formData.user_id}
+              onChange={handleMultiSelectChange}
+              required
+              className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {palestrantes.map((palestrante) => (
+                <option key={palestrante.user_id} value={palestrante.user_id}>
+                  {palestrante.nome}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <div className="flex-grow px-2 mb-4 min-w-min">
-          <label htmlFor="id_sala" className="block text-lg font-medium text-gray-700 mb-2">Sala:</label>
-          <select
-            name="id_sala"
-            id="id_sala"
-            value={formData.id_sala}
-            onChange={handleInputChange}
-            required
-            className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Selecione uma Sala</option>
-            {salas.map((sala) => (
-              <option key={sala.id_sala} value={sala.id_sala}>
-                {sala.nome_sala}
-              </option>
-            ))}
-          </select>
-        </div>
+          <div>
+            <label htmlFor="id_sala" className="block text-lg font-medium text-gray-700 mb-2">Sala:</label>
+            <select
+              name="id_sala"
+              id="id_sala"
+              value={formData.id_sala}
+              onChange={handleInputChange}
+              required
+              className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Selecione uma Sala</option>
+              {salas.map((sala) => (
+                <option key={sala.id_sala} value={sala.id_sala}>
+                  {sala.nome_sala}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <div className="flex-grow px-2 mb-4 min-w-min">
-          <label htmlFor="data_inicio" className="block text-lg font-medium text-gray-700 mb-2">Data de Início:</label>
-          <input
-            type="datetime-local"
-            name="data_inicio"
-            id="data_inicio"
-            value={formData.data_inicio}
-            onChange={handleInputChange}
-            required
-            className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+          <div>
+            <label htmlFor="data_inicio" className="block text-lg font-medium text-gray-700 mb-2">Data de Início:</label>
+            <input
+              type="datetime-local"
+              name="data_inicio"
+              id="data_inicio"
+              value={formData.data_inicio}
+              onChange={handleInputChange}
+              required
+              className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
 
-        <div className="flex-grow px-2 mb-4 min-w-min">
-          <label htmlFor="data_fim" className="block text-lg font-medium text-gray-700 mb-2">Data de Fim:</label>
-          <input
-            type="datetime-local"
-            name="data_fim"
-            id="data_fim"
-            value={formData.data_fim}
-            onChange={handleInputChange}
-            required
-            className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+          <div>
+            <label htmlFor="data_fim" className="block text-lg font-medium text-gray-700 mb-2">Data de Fim:</label>
+            <input
+              type="datetime-local"
+              name="data_fim"
+              id="data_fim"
+              value={formData.data_fim}
+              onChange={handleInputChange}
+              required
+              className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
 
-        <div className="flex-grow px-2 mb-4 min-w-min">
-          <label htmlFor="breve_desc" className="block text-lg font-medium text-gray-700 mb-2">Breve Descrição:</label>
-          <input
-            type="text"
-            name="breve_desc"
-            id="breve_desc"
-            value={formData.breve_desc}
-            onChange={handleInputChange}
-            required
-            className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+          <div>
+            <label htmlFor="breve_desc" className="block text-lg font-medium text-gray-700 mb-2">Breve Descrição:</label>
+            <input
+              type="text"
+              name="breve_desc"
+              id="breve_desc"
+              value={formData.breve_desc}
+              onChange={handleInputChange}
+              required
+              className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
 
-        <div className="flex-grow px-2 mb-4 min-w-min">
-          <label htmlFor="descricao" className="block text-lg font-medium text-gray-700 mb-2">Descrição:</label>
-          <textarea
-            name="descricao"
-            id="descricao"
-            value={formData.descricao}
-            onChange={handleInputChange}
-            required
-            className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            rows="4"
-          />
-        </div>
+          <div>
+            <label htmlFor="descricao" className="block text-lg font-medium text-gray-700 mb-2">Descrição:</label>
+            <textarea
+              name="descricao"
+              id="descricao"
+              value={formData.descricao}
+              onChange={handleInputChange}
+              required
+              className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              rows="4"
+            />
+          </div>
 
-        <div className="flex-grow px-2 mb-4 min-w-min">
-          <label htmlFor="imagem" className="block text-lg font-medium text-gray-700 mb-2">Imagem do Evento:</label>
-          <input
-            type="file"
-            name="imagem"
-            id="imagem"
-            onChange={handleImageChange}
-            className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          {previewImage && (
-            <img src={previewImage} alt="Pré-visualização" className="mt-4 w-full h-auto rounded-lg" />
-          )}
-        </div>
-        
-        <div className="w-full px-2 mt-6 text-center">
-          <button
-            type="submit"
-            className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            Criar Evento
-          </button>
-        </div>
-      </form>
+          <div>
+            <label htmlFor="imagem" className="block text-lg font-medium text-gray-700 mb-2">Imagem do Evento:</label>
+            <input
+              type="file"
+              name="imagem"
+              id="imagem"
+              onChange={handleImageChange}
+              className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            {previewImage && (
+              <img src={previewImage} alt="Pré-visualização" className="mt-4 w-full h-auto rounded-lg" />
+            )}
+          </div>
+
+          <div className="w-full text-center">
+            <button
+              type="submit"
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+            >
+              Criar Evento
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };
