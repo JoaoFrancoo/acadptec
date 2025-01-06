@@ -16,6 +16,10 @@ import Dashboard from './pages/dashboard';
 import Banido from './pages/banido';
 import EditarPerfil from './pages/editarPerfil';
 import CriarEventos from './pages/criarEventos';
+import CriarCategoria from './pages/criarCategoria';
+import CriarSala from './pages/criarSala';
+import Categorias from './pages/categoria';
+import Salas from './pages/salas';
 
 function App() {
   const [userId, setUserId] = useState(undefined);
@@ -47,7 +51,11 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/banido" element={<Banido />} />
           <Route path="/footer" element={<Footer />} />
+          <Route path="/criarCategoria" element={<CriarCategoria />}/>
+          <Route path="/criarSala" element={<CriarSala />} />
           <Route path="/editarPerfil" element={<EditarPerfil />} />
+          <Route path="/salas" element={<Salas />} />
+          <Route path="/categorias" element={<Categorias />}/>
           <Route path="/criarEventos" element={<CriarEventos />} />
         </Routes>
       </ErrorBoundary>

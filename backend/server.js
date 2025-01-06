@@ -817,6 +817,31 @@ app.get('/admin/clientesOrganizadores', async (req, res) => {
   }
 });
 
+app.post('/admin/add-category', authMiddleware, (req, res) => {
+  const { descricao } = req.body;
+
+    const query = 'INSERT INTO categorias (descricao) VALUES (?)';
+    db.query(query, [descricao], (err, result) => {
+      if (err) {
+        console.error('Erro ao adicionar categoria:', err);
+        return res.status(500).json({ success: false, message: 'Erro ao adicionar categoria.' });
+      }
+      res.status(200).json({ success: true, message: 'Categoria adicionada com sucesso!' });
+    });
+});
+app.post('/admin/add-sala', authMiddleware, (req, res) => {
+  const { nomeSala, capacidade } = req.body;
+
+  const query = 'INSERT INTO salas (nome_sala, capacidade) VALUES (?, ?)';
+  db.query(query, [nomeSala, capacidade], (err, result) => {
+    if (err) {
+      console.error('Erro ao adicionar sala:', err);
+      return res.status(500).json({ success: false, message: 'Erro ao adicionar sala.' });
+    }
+    res.status(200).json({ success: true, message: 'Sala adicionada com sucesso!' });
+  });
+});
+
 app.put('/admin/organizadores/:id', async (req, res) => {
   const organizadorId = req.params.id; // ID do organizador na tabela organizadores
   const { user_id, departamento } = req.body; // user_id refere-se à tabela login

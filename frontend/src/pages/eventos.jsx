@@ -13,7 +13,7 @@ function EventosPage() {
   useEffect(() => {
     const fetchEventos = async () => {
       try {
-        const response = await fetch(`http://localhost:8081/eventos?page=${currentPage}&limit=10`);
+        const response = await fetch(`http://localhost:8081/eventos?page=${currentPage}&limit=9`);
         if (!response.ok) {
           throw new Error('Erro ao buscar eventos');
         }

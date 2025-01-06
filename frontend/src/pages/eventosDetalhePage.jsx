@@ -199,11 +199,11 @@ function EventoDetalhesPage() {
       <Modal
         isOpen={modalIsOpen}
         onRequestClose={closeModal}
-        contentLabel={`${modalType === 'inscrever' ? 'Inscrever no' : 'Desinscrever do'} evento ${evento.nome_evento}`}
+        contentLabel={`${modalType === 'inscrever' ? 'Inscrever no' : 'Desinscrever do'} ${evento.nome_evento}`}
         className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50"
       >
         <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-          <h2 className="text-2xl font-semibold mb-4">{modalType === 'inscrever' ? `Inscrever no evento ${evento.nome_evento}` : `Desinscrever do evento ${evento.nome_evento}`}</h2>
+          <h2 className="text-2xl font-semibold mb-4">{modalType === 'inscrever' ? `Inscrever no ${evento.nome_evento}` : `Desinscrever do ${evento.nome_evento}`}</h2>
           <div className="mb-4">
             <label className="block mb-1 font-bold">Quantidade:</label>
             <input

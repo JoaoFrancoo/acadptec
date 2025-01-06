@@ -4,7 +4,11 @@ import { Link } from 'react-router-dom';
 const Navbar = ({ userId, userLevel }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isEventDropdownOpen, setIsEventDropdownOpen] = useState(false);
+  const [isCategoriaDropdownOpen, setIsCategoriaDropdownOpen] = useState(false);
+  const [isSalaDropdownOpen, setIsSalaDropdownOpen] = useState(false);
   const eventDropdownRef = useRef(null);
+  const categoriaDropdownRef = useRef(null);
+  const salaDropdownRef = useRef(null);
 
   useEffect(() => {
     console.log('User ID:', userId);
@@ -16,13 +20,19 @@ const Navbar = ({ userId, userLevel }) => {
       if (eventDropdownRef.current && !eventDropdownRef.current.contains(event.target)) {
         setIsEventDropdownOpen(false);
       }
+      if (categoriaDropdownRef.current && !categoriaDropdownRef.current.contains(event.target)) {
+        setIsCategoriaDropdownOpen(false);
+      }
+      if (salaDropdownRef.current && !salaDropdownRef.current.contains(event.target)) {
+        setIsSalaDropdownOpen(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [eventDropdownRef]);
+  }, [eventDropdownRef, categoriaDropdownRef, salaDropdownRef]);
 
   const handleDropdownToggle = () => {
     setIsDropdownOpen(!isDropdownOpen);
@@ -30,6 +40,14 @@ const Navbar = ({ userId, userLevel }) => {
 
   const handleEventDropdownToggle = () => {
     setIsEventDropdownOpen(!isEventDropdownOpen);
+  };
+
+  const handleCategoriaDropdownToggle = () => {
+    setIsCategoriaDropdownOpen(!isCategoriaDropdownOpen);
+  };
+
+  const handleSalaDropdownToggle = () => {
+    setIsSalaDropdownOpen(!isSalaDropdownOpen);
   };
 
   const handleLogout = () => {
@@ -83,13 +101,55 @@ const Navbar = ({ userId, userLevel }) => {
               </li>
             )}
             {userLevel >= 3 && (
-              <li>
-                <Link to="/organizadores" className="text-black hover:text-gray-700 transition-colors">Organizadores</Link>
+              <li className="relative" ref={categoriaDropdownRef}>
+                <button
+                  onClick={handleCategoriaDropdownToggle}
+                  className="text-black hover:text-gray-700 transition-colors"
+                >
+                  Categorias
+                </button>
+                {isCategoriaDropdownOpen && (
+                  <div className="absolute right-0 mt-2 py-2 w-48 bg-white rounded-md shadow-lg border border-gray-200">
+                    <ul>
+                      <li>
+                        <Link to="/categorias" className="block px-4 py-2 text-black hover:bg-gray-100">
+                          Ver Categorias
+                        </Link>
+                      </li>
+                      <li>
+                        <Link to="/criarCategoria" className="block px-4 py-2 text-black hover:bg-gray-100">
+                          Criar Categoria
+                        </Link>
+                      </li>
+                    </ul>
+                  </div>
+                )}
               </li>
             )}
-            {userLevel >= 2 && (
-              <li>
-                <Link to="/patrocinadores" className="text-black hover:text-gray-700 transition-colors">Patrocinadores</Link>
+            {userLevel >= 4 && (
+              <li className="relative" ref={salaDropdownRef}>
+                <button
+                  onClick={handleSalaDropdownToggle}
+                  className="text-black hover:text-gray-700 transition-colors"
+                >
+                  Salas
+                </button>
+                {isSalaDropdownOpen && (
+                  <div className="absolute right-0 mt-2 py-2 w-48 bg-white rounded-md shadow-lg border border-gray-200">
+                    <ul>
+                      <li>
+                        <Link to="/salas" className="block px-4 py-2 text-black hover:bg-gray-100">
+                          Ver Salas
+                        </Link>
+                      </li>
+                      <li>
+                        <Link to="/criarSala" className="block px-4 py-2 text-black hover:bg-gray-100">
+                          Criar Sala
+                        </Link>
+                      </li>
+                    </ul>
+                  </div>
+                )}
               </li>
             )}
             {userLevel >= 1 && (
