@@ -73,19 +73,26 @@ function AdminDashboard() {
   };
 
   const handleEdit = async (id, updatedData, section) => {
-    const allowedFields = ['user_id', 'nome', 'email', 'status'];
+    const allowedFields = ['id_palestrante', 'user_id', 'biografia'];
     const sanitizedData = Object.keys(updatedData)
       .filter((key) => allowedFields.includes(key))
       .reduce((obj, key) => {
         obj[key] = updatedData[key];
         return obj;
       }, {});
+
+      console.log('Dados sanitizados para envio:', sanitizedData);
+      const palestranteId = updatedData.id_palestrante; 
   
     try {
-      await api.put(`admin/${section}/${id}`, sanitizedData);
-      fetchData();
+      const response = await api.put(`admin/palestrantes/${palestranteId}`, sanitizedData);
+      console.log('Resposta do servidor:', response.data);
+      fetchData(); // Atualiza os dados após a edição
     } catch (err) {
-      console.error(err);
+      console.error('Erro na requisição PUT:', err);
+      if (err.response) {
+        console.error('Erro do servidor:', err.response.data); // Mensagem do backend
+      }
       setError('Erro ao salvar as alterações.');
     }
   };
@@ -259,7 +266,7 @@ function AdminDashboard() {
                       );
                       const updatedItem = {
                         ...item,
-                        id_categoria: categoriaId,
+                        
                         categoria_nome: categoria ? categoria.descricao : item.categoria_nome,
                       };
                       handleInputChange(e, updatedItem, section);
@@ -286,10 +293,14 @@ function AdminDashboard() {
                     name="id_sala"
                     value={item.id_sala || ''}
                     onChange={(e) => {
-                      const sala = salas.find((sala) => sala.id_sala === e.target.value);
+                      const salaId = parseInt(e.target.value, 10);
+                      const sala = salas.find(
+                        (sala) => sala.id_sala === salaId
+                      );
+                      
                       const updatedItem = {
                         ...item,
-                        id_sala: e.target.value,
+                        
                         sala_nome: sala ? sala.nome_sala : item.sala_nome,
                       };
                       handleInputChange(e, updatedItem, section);
@@ -309,23 +320,26 @@ function AdminDashboard() {
               );
             }
 
-            if (key === 'organizador_nome') {
+            if (section === 'organizadores' && key === 'nome') {
               return (
                 <td key={key}>
-                  <select
-                   
+                  <select                   
                    name="id_organizador"
-                   value={item.id_organizador || ''}
+                   value={item.organizador_nome || ''}
                    onChange={(e) => {
-                     const organizador = organizadores.find(
-                       (organizador) => organizador.id_organizador === e.target.value
-                     );
+                     const organizadorId = parseInt(e.target.value, 10);
+                     const organizadorNome = e.target.value;
+                     const organizadores = organizadores.find(
+                      (organizadores) => organizadores.id_organizador === organizadorId
+                    );
                      const updatedItem = {
                        ...item,
-                       id_organizador: e.target.value,
-                       organizador_nome: organizador ? organizador.nome : item.organizador_nome,
+                       
+                       organizador_nome: organizadores ? organizadores.nome : item.organizador_nome,
                      };
-                     handleInputChange(e, updatedItem, section);
+                     handleInputChange({ target: {name: 'organizador_nome', value: organizadorNome}},
+                      updatedItem, 
+                      section);
                    }}
                    className="border rounded p-1 w-full"
                  >
@@ -333,7 +347,7 @@ function AdminDashboard() {
                      {item.organizador_nome || 'Selecione...'}
                    </option>
                    {organizadores.map((organizador) => (
-                     <option key={organizador.id_organizador} value={organizador.id_organizador}>
+                     <option key={organizador.id_organizador} value={organizador.nome}>
                        {organizador.nome}
                      </option>
                    ))}
@@ -350,22 +364,34 @@ function AdminDashboard() {
                  name="user_id"
                  value={item.user_id || ''}
                  onChange={(e) => {
+                  const selectedUserId = parseInt(e.target.value, 10) || 0;
                   const cliente = clientes.find(
-                    (cliente) => cliente.user_id === parseInt(e.target.value, 10)
+                    (cliente) => cliente.user_id === selectedUserId
                   );
                   const updatedItem = {
                     ...item,
-                    user_id: parseInt(e.target.value, 10),
-                    nome: cliente ? cliente.nome : item.nome,
+                    user_id: selectedUserId,
+                    nome: cliente ? cliente.nome : '',
                   };
-                  handleInputChange(e, updatedItem, section);
+
+                  setPalestrantes((prev) =>
+                    prev.map((palestrante) =>
+                    palestrante.id_palestrante === item.id_palestrante
+                    ? {
+                        ...palestrante,
+                        user_id: selectedUserId,
+                        nome: cliente ? cliente.nome : palestrante.nome,
+                    }
+                    : palestrante
+                  )
+                );
+                 
                 }}
                 
                 
                  className="border rounded p-1 w-full"
                >
-                 <option value={item.user_id || ''}>
-                   {item.nome || 'Selecione...'}
+                 <option value="">Selecione...
                  </option>
                  {clientes
                    .filter((cliente) => cliente.nivel === 2)
@@ -419,11 +445,28 @@ function AdminDashboard() {
      <table className="min-w-full border-collapse">
        <thead>
          <tr>
-           {Object.keys(data[0] || {}).map((key) => (
+           {Object.keys(data[0] || {})
+           .filter((key) => !(selectedSection === 'palestrantes' && (key === 'user_id' ||  key === 'id_palestrante')))
+           .filter((key) => !(selectedSection === 'clientes' && (key === 'user_id')))
+           .filter((key) => !(selectedSection === 'eventos' && (key === 'id_evento')))
+           .filter((key) => !(selectedSection === 'categorias' && (key === 'id_categoria')))
+           .filter((key) => !(selectedSection === 'salas' && (key === 'id_sala' || key === 'capacidade')))
+           .filter((key) => !(selectedSection === 'organizadores' && (key === 'id_organizador' || key === 'user_id')))
+ 
+           .map((key) => {
+            if (selectedSection === 'palestrantes' && key === 'id_cliente') {
+              return (
+                <th key={key} className="border p-2 text-left">
+                  Nome
+                </th>
+              );
+            }
+            return (
              <th key={key} className="border p-2 text-left">
                {key}
              </th>
-           ))}
+            );
+ })}
            <th className="border p-2 text-left">Ações</th>
          </tr>
        </thead>

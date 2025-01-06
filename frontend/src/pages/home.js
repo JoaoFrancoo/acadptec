@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react'
-import Footer from '../components/footer'
+import React, { useEffect, useState } from 'react';
+import Footer from '../components/footer';
 import useAuth from '../components/userAuth';
 
 function Home() {
-  useAuth()
+  useAuth();
 
   const [eventos, setEventos] = useState([]);
 
@@ -38,7 +38,7 @@ function Home() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen">
       <div className="w-4/6">
-        <video 
+        <video
           src={"https://cdn.pixabay.com/video/2023/10/15/185092-874643408_large.mp4"}
           autoPlay
           loop
@@ -48,23 +48,36 @@ function Home() {
         ></video>
       </div>
 
-        <div className="w-full flex flex-col justify-center items-center py-10 bg-gray-200 pt-10">
+      <div className="w-full flex flex-col items-center py-10 bg-gray-200 pt-10">
         <div className="w-full text-center font-medium font-mono px-5">
           <h2 className="text-2xl font-semibold mb-4">Próximos Eventos</h2>
-          <div className="flex flex-col items-center gap-6">
+          {/* Centralizando os eventos */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-center items-center w-full max-w-6xl">
             {eventos.length > 0 ? (
               eventos.map((evento) => (
                 <div
                   key={evento.id_evento}
-                  className="bg-white shadow-lg rounded-lg p-4 w-full max-w-md"
+                  className="bg-white shadow-lg rounded-lg overflow-hidden flex flex-col items-center"
                 >
-                  <h3 className="text-xl font-bold text-blue-600">
-                    {evento.nome_evento}
-                  </h3>
-                  <p className="text-gray-600">
-                    Data: {formatDateTime(evento.data_inicio)}
-                  </p>
-                  <p className="text-gray-600">{evento.breve_desc}</p>
+                  {/* Exibindo a foto do evento */}
+                  <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
+                    {evento.foto ? (
+                      <img 
+                        src={evento.foto} 
+                        alt={`Foto do evento ${evento.nome_evento}`} 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-gray-500 font-semibold">Sem imagem</span>
+                    )}
+                  </div>
+                  <div className="p-4 text-center">
+                    <h3 className="text-xl font-bold text-blue-600">{evento.nome_evento}</h3>
+                    <p className="text-gray-600">
+                      Data: {formatDateTime(evento.data_inicio)}
+                    </p>
+                    <p className="text-gray-600">{evento.breve_desc}</p>
+                  </div>
                 </div>
               ))
             ) : (
@@ -75,7 +88,7 @@ function Home() {
       </div>
       <Footer />
     </div>
-  )
+  );
 }
 
-export default Home
+export default Home;
