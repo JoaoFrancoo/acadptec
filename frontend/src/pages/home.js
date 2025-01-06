@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import Footer from '../components/footer';
 import useAuth from '../components/userAuth';
+import { useNavigate } from 'react-router-dom';
 
 function Home() {
   useAuth();
 
   const [eventos, setEventos] = useState([]);
+  const [showScrollTopButton, setShowScrollTopButton] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchEventos = async () => {
@@ -22,6 +25,19 @@ function Home() {
     };
 
     fetchEventos();
+
+     // Adiciona evento para monitorar scroll e exibir o botão flutuante
+     const handleScroll = () => {
+      const scrollY = window.scrollY || document.documentElement.scrollTop;
+      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+      setShowScrollTopButton(scrollY > scrollHeight * 0.8); // Aparece quando perto do footer
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+
   }, []);
 
   const formatDateTime = (dateString) => {
@@ -34,6 +50,17 @@ function Home() {
     };
     return new Date(dateString).toLocaleString('pt-PT', options);
   };
+
+  const handleScrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleVerMaisEventos = () => {
+    // Destacar o botão "Eventos" na navbar
+    navigate('/eventos', { state: { highlight: 'eventos' } });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen">
@@ -52,15 +79,15 @@ function Home() {
         <div className="w-full text-center font-medium font-mono px-5">
           <h2 className="text-2xl font-semibold mb-4">Próximos Eventos</h2>
           {/* Centralizando os eventos */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-center items-center w-full max-w-6xl">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6  items-center w-full px-4">
             {eventos.length > 0 ? (
               eventos.map((evento) => (
                 <div
                   key={evento.id_evento}
-                  className="bg-white shadow-lg rounded-lg overflow-hidden flex flex-col items-center"
+                  className="bg-white shadow-lg rounded-lg overflow-hidden flex flex-col items-center w-full"
                 >
                   {/* Exibindo a foto do evento */}
-                  <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
+                  <div className="w-full h-48 bg-gray-200 flex items-center justify-center relative transition-transform transform hover:scale-105">
                     {evento.foto ? (
                       <img 
                         src={evento.foto} 
@@ -68,7 +95,7 @@ function Home() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <span className="text-gray-500 font-semibold">Sem imagem</span>
+                      <span className="text-gray-500 font-semibold relative transition-transform transform hover:scale-105">Sem imagem</span>
                     )}
                   </div>
                   <div className="p-4 text-center">
@@ -84,9 +111,26 @@ function Home() {
               <p className="text-gray-500">Carregando eventos...</p>
             )}
           </div>
+          {/* Botão "Ver Mais Eventos" */}
+          <div className="mt-6">
+            <button
+              onClick={handleVerMaisEventos}
+              className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-full shadow-lg hover:bg-blue-700 transition-transform transform hover:scale-105"
+            >
+              Ver Mais Eventos
+            </button>
+          </div>
         </div>
       </div>
       <Footer />
+      {showScrollTopButton && (
+        <button
+          onClick={handleScrollToTop}
+          className="fixed bottom-6 right-6 bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 transition-transform transform hover:scale-105"
+        >
+          ↑
+        </button>
+      )}
     </div>
   );
 }
