@@ -54,7 +54,7 @@ const PerfilUtilizador = () => {
   const palestrante = isPalestrante ? palestrantes.find(pal => pal.id_cliente === userId) : null;
 
   return (
-    <div className="flex flex-col items-center p-6 bg-gray-100 min-h-screen">
+    <div className="flex flex-col items-center p-6 bg-gray-50 min-h-screen">
       {editMode ? (
         <EditarPerfil
           userData={userData}
@@ -63,50 +63,50 @@ const PerfilUtilizador = () => {
           onSave={() => { setEditMode(false); fetchUserData(); }}
         />
       ) : (
-        <div className="bg-white shadow-lg rounded-lg p-6 w-full max-w-md">
-          <h1 className="text-3xl font-bold text-blue-600 leading-tight text-center">Perfil do Utilizador</h1>
-          <div className="text-center mb-4">
+        <div className="bg-white shadow-xl rounded-lg p-8 w-full max-w-lg">
+          <h1 className="text-3xl font-bold text-blue-600 leading-tight text-center mb-6">Perfil do Utilizador</h1>
+          <div className="text-center mb-6">
             <img
               src={userData.user.foto || '/default-profile.png'}
               alt="Foto do Utilizador"
-              className="w-24 h-24 rounded-full object-cover mx-auto"
+              className="w-32 h-32 rounded-full object-cover mx-auto border-4 border-blue-500"
             />
           </div>
-          <div className="mb-4">
-            <p><strong>Nome:</strong> {userData.user.nome}</p>
-            <p><strong>Email:</strong> {userData.user.email}</p>
-            {isOrganizador && <p><strong>Departamento:</strong> {organizador.departamento}</p>}
-            {isPalestrante && <p><strong>Biografia:</strong> {palestrante.biografia}</p>}
+          <div className="mb-6">
+            <p className="text-lg"><strong>Nome:</strong> {userData.user.nome}</p>
+            <p className="text-lg"><strong>Email:</strong> {userData.user.email}</p>
+            {isOrganizador && <p className="text-lg"><strong>Departamento:</strong> {organizador.departamento}</p>}
+            {isPalestrante && <p className="text-lg"><strong>Biografia:</strong> {palestrante.biografia}</p>}
           </div>
-          <div className="mb-4">
+          <div className="mb-6">
             <h2 className="text-2xl font-semibold mb-4">Inscrições</h2>
             {userData.inscricoes.length > 0 ? (
-              <table className="min-w-full bg-white">
-                <thead>
+              <table className="min-w-full bg-white rounded-lg shadow-md">
+                <thead className="bg-blue-100">
                   <tr>
-                    <th className="py-2 px-4 border-b">Evento</th>
-                    <th className="py-2 px-4 border-b">Quantidade</th>
+                    <th className="py-2 px-4 text-left">Evento</th>
+                    <th className="py-2 px-4 text-left">Quantidade</th>
                   </tr>
                 </thead>
                 <tbody>
                   {userData.inscricoes.map(inscricao => (
-                    <tr key={inscricao.id_evento}>
-                      <td className="py-2 px-4 border-b">
+                    <tr key={inscricao.id_evento} className="border-b hover:bg-gray-100">
+                      <td className="py-2 px-4">
                         <Link to={`/eventos/${inscricao.id_evento}`} className="text-blue-500 hover:underline">
                           {inscricao.nome_evento}
                         </Link>
                       </td>
-                      <td className="py-2 px-4 border-b">{inscricao.quantidade}</td>
+                      <td className="py-2 px-4">{inscricao.quantidade}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             ) : (
-              <p>Nenhuma inscrição encontrada.</p>
+              <p className="text-lg">Nenhuma inscrição encontrada.</p>
             )}
           </div>
           <button
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700 mt-4"
+            className="bg-blue-600 text-white px-6 py-3 rounded-full hover:bg-blue-700 mt-4 w-full transition-all"
             onClick={() => setEditMode(true)}
           >
             Editar Perfil
