@@ -441,12 +441,12 @@ function AdminDashboard() {
 
    const data = dataMap[selectedSection];
 
-   return (
+     return (
      <table className="min-w-full border-collapse">
        <thead>
          <tr>
            {Object.keys(data[0] || {})
-           .filter((key) => !(selectedSection === 'palestrantes' && (key === 'user_id' ||  key === 'id_palestrante')))
+           .filter((key) => !(selectedSection === 'palestrantes' && (key === 'user_id' )))
            .filter((key) => !(selectedSection === 'clientes' && (key === 'user_id')))
            .filter((key) => !(selectedSection === 'eventos' && (key === 'id_evento')))
            .filter((key) => !(selectedSection === 'categorias' && (key === 'id_categoria')))
