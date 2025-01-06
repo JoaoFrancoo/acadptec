@@ -56,7 +56,7 @@ const Navbar = ({ userId, userLevel }) => {
   };
 
   return (
-    <nav className="bg-whitesmoke p-4 shadow-md">
+    <nav className="bg-whitesmoke p-4 shadow-md hover:scale-105 transition-transform duration-300">
       <div className="container mx-auto">
         <div className="flex justify-between items-center">
           <div className="text-black font-bold text-xl">
@@ -64,19 +64,19 @@ const Navbar = ({ userId, userLevel }) => {
           </div>
           <ul className="flex space-x-8">
             <li>
-              <Link to="/" className="text-black hover:text-gray-700 transition-colors">Home</Link>
+              <Link to="/" className="text-black hover:text-gray-700 hover:scale-110 transition-transform duration-300 text-lg">Home</Link>
             </li>
             <li>
-              <Link to="/login" className="text-black hover:text-gray-700 transition-colors">Login</Link>
+              <Link to="/login" className="text-black hover:text-gray-700 hover:scale-110 transition-transform duration-300 text-lg">Login</Link>
             </li>
             <li>
-              <Link to="/register" className="text-black hover:text-gray-700 transition-colors">Registrar</Link>
+              <Link to="/register" className="text-black hover:text-gray-700 hover:scale-110 transition-transform duration-300 text-lg">Registrar</Link>
             </li>
             {userLevel >= 2 && (
               <li className="relative" ref={eventDropdownRef}>
                 <button
                   onClick={handleEventDropdownToggle}
-                  className="text-black hover:text-gray-700 transition-colors"
+                  className="text-black hover:text-gray-700 hover:scale-110 transition-transform duration-300 text-lg"
                 >
                   Eventos
                 </button>
@@ -104,7 +104,7 @@ const Navbar = ({ userId, userLevel }) => {
               <li className="relative" ref={categoriaDropdownRef}>
                 <button
                   onClick={handleCategoriaDropdownToggle}
-                  className="text-black hover:text-gray-700 transition-colors"
+                  className="text-black hover:text-gray-700 hover:scale-110 transition-transform duration-300 text-lg"
                 >
                   Categorias
                 </button>
@@ -130,7 +130,7 @@ const Navbar = ({ userId, userLevel }) => {
               <li className="relative" ref={salaDropdownRef}>
                 <button
                   onClick={handleSalaDropdownToggle}
-                  className="text-black hover:text-gray-700 transition-colors"
+                  className="text-black hover:text-gray-700 hover:scale-110 transition-transform duration-300 text-lg"
                 >
                   Salas
                 </button>
@@ -156,7 +156,7 @@ const Navbar = ({ userId, userLevel }) => {
               <li className="relative">
                 <button
                   onClick={handleDropdownToggle}
-                  className="text-black hover:text-gray-700 transition-colors"
+                  className="text-black hover:text-gray-700 hover:scale-110 transition-transform duration-300 text-lg"
                 >
                   Perfil
                 </button>
@@ -183,7 +183,8 @@ const Navbar = ({ userId, userLevel }) => {
             )}
             {userLevel >= 4 && (
               <li>
-                <Link to="/dashboard" className="text-black hover:text-gray-700 transition-colors">Dashboard</Link>
+                <Link to="/dashboard" className="text-black hover:text-gray-700 hover:scale-110 transition-transform duration-300 text-lg"
+                >Dashboard</Link>
               </li>
             )}
           </ul>
