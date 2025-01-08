@@ -82,10 +82,23 @@ function AdminDashboard() {
       }, {});
 
       console.log('Dados sanitizados para envio:', sanitizedData);
-      const palestranteId = updatedData.id_palestrante; 
+      console.log('Dados recebidos para atualização:', updatedData);
+      const palestranteId = updatedData.id_palestrante;
+      if (!palestranteId) {
+        console.error('Erro: ID do palestrante está indefinido.');
+        setError('Não foi possível identificar o palestrante para edição.');
+        return;
+      } 
   
     try {
-      const response = await api.put(`admin/palestrantes/${palestranteId}`, sanitizedData);
+      const response = await api.put(`admin/palestrantes/${palestranteId}`, sanitizedData
+        , {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        } 
+      );
+      
       console.log('Resposta do servidor:', response.data);
       fetchData(); // Atualiza os dados após a edição
     } catch (err) {
@@ -178,7 +191,7 @@ function AdminDashboard() {
           if (key.includes('id') && section !== 'palestrantes') return null;
           if (key === 'data_inicio' || key === 'data_fim') {
             return (
-              <td key={key}>
+              <td key={`${key}-${item[idField]}`}>
                 <input
                   type="datetime-local"
                   name={key}
@@ -191,7 +204,7 @@ function AdminDashboard() {
           }
           if (section === 'organizadores' && key === 'id_organizador') {
             return (
-              <td key={key}>
+              <td key={`readonly-${key}-${item[idField]}`}>
                 <input
                   type="text"
                   name={key}
@@ -205,7 +218,7 @@ function AdminDashboard() {
   
           if (section === 'organizadores' && key === 'user_id') {
             return (
-              <td key={key}>
+              <td key={`${key}-${item[idField]}`}>
                 <select
                   name="user_id"
                   value={item.user_id || ''}
@@ -240,7 +253,7 @@ function AdminDashboard() {
   
           if (section === 'organizadores' && key === 'id_departamento') {
             return (
-              <td key={key}>
+              <td key={`readonly-${key}${item[idField]}`}>
                 {/* O id_departamento não deve ser alterado, então ele é apenas exibido */}
                 <input
                   type="text"
@@ -255,7 +268,7 @@ function AdminDashboard() {
           if (section === 'eventos') {
             if (key === 'categoria_nome') {
               return (
-                <td key={key}>
+                <td key={`categoria-${item[idField]}`}>
                   <select
                     name="id_categoria"
                     value={item.id_categoria || ''}
@@ -288,7 +301,7 @@ function AdminDashboard() {
 
             if (key === 'sala_nome') {
               return (
-                <td key={key}>
+                <td key={`${key}-${item[idField]}`}>
                   <select
                     name="id_sala"
                     value={item.id_sala || ''}
@@ -322,7 +335,7 @@ function AdminDashboard() {
 
             if (section === 'organizadores' && key === 'nome') {
               return (
-                <td key={key}>
+                <td key={`${key}-${item[idField]}`}>
                   <select                   
                    name="id_organizador"
                    value={item.organizador_nome || ''}
@@ -359,7 +372,7 @@ function AdminDashboard() {
 
          if (section === 'palestrantes' && key === 'id_cliente') {
            return (
-             <td key={key}>
+             <td key={`${key}-${item[idField]}`}>
                <select
                  name="user_id"
                  value={item.user_id || ''}
@@ -406,7 +419,7 @@ function AdminDashboard() {
          }
 
          return (
-           <td key={key}>
+           <td key={`${key}-${item[idField]}`}>
              <input
                type="text"
                name={key}
