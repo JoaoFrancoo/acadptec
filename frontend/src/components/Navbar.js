@@ -70,7 +70,7 @@ const Navbar = ({ userId, userLevel }) => {
               <Link to="/login" className="text-black hover:text-gray-700 hover:scale-110 transition-transform duration-300 text-lg">Login</Link>
             </li>
             <li>
-              <Link to="/register" className="text-black hover:text-gray-700 hover:scale-110 transition-transform duration-300 text-lg">Registrar</Link>
+              <Link to="/register" className="text-black hover:text-gray-700 hover:scale-110 transition-transform duration-300 text-lg">Registar</Link>
             </li>
             {userLevel >= 2 && (
               <li className="relative" ref={eventDropdownRef}>
