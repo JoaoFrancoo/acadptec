@@ -232,33 +232,6 @@ app.post('/retirar-bilhete/:id_evento', authMiddleware, async (req, res) => {
   }
 });
 
-// Listar eventos
-app.get('/admin/eventos', async (req, res) => {
-  try {
-    const sql = `
-      SELECT 
-        eventos.id_evento, 
-        eventos.nome, 
-        eventos.data_inicio, 
-        eventos.data_fim, 
-        categorias.descricao AS categoria_nome,
-        salas.nome_sala AS sala_nome,
-        login.nome AS organizador_nome
-      FROM eventos
-      LEFT JOIN categorias ON eventos.id_categoria = categorias.id_categoria
-      LEFT JOIN salas ON eventos.id_sala = salas.id_sala
-      LEFT JOIN login ON eventos.id_organizador = login.user_id AND login.nivel = 3;
-    `;
-
-    const eventos = await dbQuery(sql);
-    res.json(eventos);
-  } catch (err) {
-    console.error('Erro ao buscar eventos:', err);
-    res.status(500).json({ message: 'Erro ao buscar eventos' });
-  }
-});
-
-// Rota para criar eventos com upload de imagem
 app.post('/admin/eventos', authMiddleware, upload2.single('imagem'), async (req, res) => {
   const { nome, id_categoria, id_organizadores, id_sala, data_inicio, data_fim, user_id, breve_desc, descricao } = req.body;
   const imagem = req.file ? req.file.filename : null;
@@ -291,7 +264,7 @@ app.post('/admin/eventos', authMiddleware, upload2.single('imagem'), async (req,
     console.log('Array de user_id:', user_id);
 
     for (const palestranteUserId of user_id) {
-      console.log('Inserindo palestrante com user_id:', palestranteUserId); // Adicionando log para verificar o user_id
+      console.log('Inserindo palestrante com user_id:', palestranteUserId); 
       await dbQuery(sqlEventosPalestrantes, [eventoId, palestranteUserId])
         .catch(err => {
           console.error(`Erro ao inserir palestrante ${palestranteUserId}:`, err);
@@ -426,8 +399,8 @@ app.get('/user/me/details', authMiddleware, (req, res) => {
 });
 app.put('/user/me/update', authMiddleware, upload.single('foto'), async (req, res) => {
   const { user_id, nome, email, password, departamento, biografia } = req.body;
-  const userId = user_id; // Use o user_id do corpo da requisição
-  let foto = req.file ? req.file.filename : null; // Obtem o nome do arquivo de foto se foi feito upload
+  const userId = user_id; 
+  let foto = req.file ? req.file.filename : null;
 
   console.log("Dados recebidos no backend:", { nome, email, password, departamento, biografia, foto, userId });
 
@@ -504,6 +477,7 @@ app.get('/eventos/', (req, res) => {
     SELECT e.id_evento, e.nome AS nome_evento, e.data_inicio, e.data_fim, 
            e.foto, e.breve_desc
     FROM eventos e
+    WHERE e.visivel = 1
     LIMIT ? OFFSET ?
   `;
 
@@ -518,7 +492,7 @@ app.get('/eventos/', (req, res) => {
     });
 
     // Total de eventos para paginação
-    const sqlTotal = 'SELECT COUNT(*) AS total FROM eventos';
+    const sqlTotal = 'SELECT COUNT(*) AS total FROM eventos WHERE visivel = 1';
     db.query(sqlTotal, (err, result) => {
       if (err) {
         return res.status(500).json({ error: 'Erro ao contar eventos' });
@@ -535,6 +509,7 @@ app.get('/eventos/', (req, res) => {
     });
   });
 });
+
 
 app.get('/eventos/:id', (req, res) => {
   const { id } = req.params;
@@ -704,6 +679,7 @@ app.get('/admin/clientes/nivel2', async (req, res) => {
           eventos.nome, 
           eventos.data_inicio, 
           eventos.data_fim, 
+          eventos.visivel,
           categorias.descricao AS categoria_nome,
           salas.nome_sala AS sala_nome,
           login.nome AS organizador_nome
@@ -713,36 +689,59 @@ app.get('/admin/clientes/nivel2', async (req, res) => {
         LEFT JOIN login ON eventos.id_organizador = login.user_id AND login.nivel = 3;
       `;
   
+      // Marque a função dbQuery como async
       const eventos = await dbQuery(sql);
-      res.json(eventos);
+      console.log(eventos);  // Exibe os dados dos eventos no console
+      res.json(eventos);  // Retorna a lista de eventos com o campo 'visivel'
     } catch (err) {
       console.error('Erro ao buscar eventos:', err);
       res.status(500).json({ message: 'Erro ao buscar eventos' });
     }
-  });  
+  });
+  
   
   app.put('/admin/eventos/:id', async (req, res) => {
     const eventId = req.params.id;
-    const { nome, data_inicio, data_fim, id_categoria, id_sala, id_organizador } = req.body;
-
+    const { visivel, nome, data_inicio, data_fim, id_categoria, id_sala, id_organizador } = req.body;
+  
     try {
-      const { query, values } = buildUpdateQuery(
-        'eventos',
-        { nome, data_inicio, data_fim, id_categoria, id_sala, id_organizador },
-        'WHERE id_evento = ?'
-      );
-      const result = await dbQuery(query, [...values, eventId]);
-
-      if (result.affectedRows === 0) {
-        return res.status(404).json({ message: 'Evento não encontrado' });
+      // Se apenas o campo `visivel` for enviado
+      if (visivel !== undefined && !nome && !data_inicio && !data_fim && !id_categoria && !id_sala && !id_organizador) {
+        const result = await dbQuery('UPDATE eventos SET visivel = ? WHERE id_evento = ?', [visivel, eventId]);
+  
+        if (result.affectedRows === 0) {
+          return res.status(404).json({ message: 'Evento não encontrado' });
+        }
+  
+        const message = visivel === 1 ? 'Evento ativado com sucesso' : 'Evento eliminado com sucesso';
+        return res.json({ message });
       }
-
-      res.json({ message: 'Evento atualizado com sucesso' });
+  
+      // Atualização de outros campos do evento
+      if (nome || data_inicio || data_fim || id_categoria || id_sala || id_organizador) {
+        const { query, values } = buildUpdateQuery(
+          'eventos',
+          { nome, data_inicio, data_fim, id_categoria, id_sala, id_organizador },
+          'WHERE id_evento = ?'
+        );
+  
+        const result = await dbQuery(query, [...values, eventId]);
+  
+        if (result.affectedRows === 0) {
+          return res.status(404).json({ message: 'Evento não encontrado' });
+        }
+  
+        return res.json({ message: 'Evento atualizado com sucesso' });
+      }
+  
+      // Caso nenhum dado válido seja enviado
+      return res.status(400).json({ message: 'Nenhum campo válido foi fornecido para atualização' });
     } catch (err) {
       console.error('Erro ao atualizar evento:', err);
       res.status(500).json({ message: 'Erro ao atualizar evento' });
     }
   });
+  
 
 // Rota para obter palestrantes
 app.get('/admin/palestrantes', async (req, res) => {
@@ -788,52 +787,99 @@ app.put('/admin/palestrantes/:id', async (req, res) => {
   }
 });
 
-  // **Categorias**
-  app.get('/admin/categorias', async (req, res) => {
-    try {
-      const categorias = await dbQuery('SELECT id_categoria, descricao FROM categorias');
-      res.json(categorias);
-    } catch (err) {
-      console.error('Erro ao buscar categorias:', err);
-      res.status(500).json({ message: 'Erro ao buscar categorias' });
-    }
-  });
 
-  
-  
-  // **Salas**
-  app.get('/admin/salas', async (req, res) => {
-    try {
-      const salas = await dbQuery('SELECT id_sala, nome_sala, capacidade FROM salas');
-      res.json(salas);
-    } catch (err) {
-      console.error('Erro ao buscar salas:', err);
-      res.status(500).json({ message: 'Erro ao buscar salas' });
+app.get('/admin/categorias', async (req, res) => {
+  try {
+    const categorias = await dbQuery('SELECT id_categoria, descricao, visivel FROM categorias');
+    res.json(categorias);
+  } catch (err) {
+    console.error('Erro ao buscar categorias:', err);
+    res.status(500).json({ message: 'Erro ao buscar categorias' });
+  }
+});
+
+
+app.put('/admin/categorias/:id', async (req, res) => {
+  const { id } = req.params;
+  const { descricao, visivel } = req.body;
+
+  try {
+    // Se apenas o campo `visivel` for enviado
+    if (visivel !== undefined && !descricao) {
+      const result = await dbQuery('UPDATE categorias SET visivel = ? WHERE id_categoria = ?', [visivel, id]);
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ message: 'Categoria não encontrada' });
+      }
+
+      const message = visivel === 1 ? 'Categoria ativada com sucesso' : 'Categoria desativada com sucesso';
+      return res.json({ message });
     }
-  });
+
+    // Atualização de outros campos da categoria
+    if (descricao) {
+      const result = await dbQuery('UPDATE categorias SET descricao = ? WHERE id_categoria = ?', [descricao, id]);
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ message: 'Categoria não encontrada' });
+      }
+
+      return res.json({ message: 'Categoria atualizada com sucesso' });
+    }
+
+    return res.status(400).json({ message: 'Nenhum campo válido foi fornecido para atualização' });
+  } catch (err) {
+    console.error('Erro ao atualizar categoria:', err);
+    res.status(500).json({ message: 'Erro ao atualizar categoria' });
+  }
+});
+  
+app.get('/admin/salas', async (req, res) => {
+  try {
+    const salas = await dbQuery('SELECT id_sala, nome_sala, capacidade, visivel FROM salas');
+    res.json(salas);
+  } catch (err) {
+    console.error('Erro ao buscar salas:', err);
+    res.status(500).json({ message: 'Erro ao buscar salas' });
+  }
+});
 
   app.put('/admin/salas/:id', async (req, res) => {
     const salaId = req.params.id;
-    const { nome_sala, capacidade } = req.body;
-
+    const { nome_sala, capacidade, visivel } = req.body;
+  
     try {
+      // Se apenas o campo `visivel` for enviado
+      if (visivel !== undefined && !nome_sala && !capacidade) {
+        const result = await dbQuery('UPDATE salas SET visivel = ? WHERE id_sala = ?', [visivel, salaId]);
+  
+        if (result.affectedRows === 0) {
+          return res.status(404).json({ message: 'Sala não encontrada' });
+        }
+  
+        const message = visivel === 1 ? 'Sala ativada com sucesso' : 'Sala desativada com sucesso';
+        return res.json({ message });
+      }
+  
+      // Atualização de outros campos da sala
       const { query, values } = buildUpdateQuery(
         'salas',
         { nome_sala, capacidade },
         'WHERE id_sala = ?'
       );
       const result = await dbQuery(query, [...values, salaId]);
-
+  
       if (result.affectedRows === 0) {
         return res.status(404).json({ message: 'Sala não encontrada' });
       }
-
+  
       res.json({ message: 'Sala atualizada com sucesso' });
     } catch (err) {
       console.error('Erro ao atualizar sala:', err);
       res.status(500).json({ message: 'Erro ao atualizar sala' });
     }
   });
+  
 
  app.get('/admin/organizadores', async (req, res) => {
   try {
