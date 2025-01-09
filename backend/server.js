@@ -332,9 +332,10 @@ app.post('/register', upload.single('foto'), async (req, res) => {
       VALUES (?, ?, ?, ?)
     `;
 
-    const fotoPath = path.join(__dirname, foto.path); // Caminho para salvar no banco
+    // Salvar apenas o nome do arquivo no banco de dados
+    const fotoNome = foto.filename; // Nome do arquivo salvo pelo multer
 
-    db.query(query, [email, nome, hashedPassword, fotoPath], (err, result) => {
+    db.query(query, [email, nome, hashedPassword, fotoNome], (err, result) => {
       if (err) {
         console.error('Erro ao inserir no banco:', err);
         return res.status(500).json({ message: 'Erro no servidor. Tente novamente mais tarde.' });
@@ -346,6 +347,7 @@ app.post('/register', upload.single('foto'), async (req, res) => {
     res.status(500).json({ message: 'Erro no servidor. Tente novamente mais tarde.' });
   }
 });
+
 
 // Login
 app.post('/login', async (req, res) => {
