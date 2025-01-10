@@ -213,6 +213,8 @@ function AdminDashboard() {
       alert('Edição feita com sucesso!');
       fetchData();
     };
+
+    
   
     return (
       <tr key={item[idField]}>
@@ -232,6 +234,39 @@ function AdminDashboard() {
               </td>
             );
           }
+
+        {/* // Dropdown para os palestrantes {/*
+        if (section === 'palestrantes' && key === 'categoria_nome') {
+          return (
+            <td key={`categoria-${item[idField]}`}>
+              <select
+                name="id_categoria"
+                value={item.id_categoria || ''}
+                onChange={(e) => {
+                  const categoriaId = parseInt(e.target.value, 10);
+                  const categoria = categorias.find((cat) => cat.id_categoria === categoriaId);
+                  const updatedItem = {
+                    ...item,
+                    id_categoria: categoriaId,
+                    categoria_nome: categoria ? categoria.descricao : item.categoria_nome,
+                  };
+                  handleInputChange(e, updatedItem, section);
+                }}
+                className="border rounded p-1 w-full"
+              >
+                <option value={item.id_categoria || ''}>
+                  {item.categoria_nome || 'Selecione...'}
+                </option>
+                {categorias.map((categoria) => (
+                  <option key={categoria.id_categoria} value={categoria.id_categoria}>
+                    {categoria.descricao}
+                  </option>
+                ))}
+              </select>
+              <input type="hidden" name="id_categoria" value={item.id_categoria || ''} className="hidden" />
+            </td>
+          );
+        } */}
   
           if (section === 'eventos' && key === 'categoria_nome') {
             return (
@@ -380,12 +415,14 @@ function AdminDashboard() {
     return (
       <div>
         <div className="mb-4">
+        {selectedSection !== "palestrantes" && selectedSection !== "organizadores" && (
           <button
             onClick={() => handleAddSection(selectedSection)}
-            className="px-4 py-2 bg-blue-500 text-white rounded shadow hover:bg-blue-700"
+            className="px-4 py-2 bg-blue-300 text-white rounded shadow hover:bg-blue-700"
           >
             Adicionar {selectedSection.charAt(0).toUpperCase() + selectedSection.slice(1)}
           </button>
+        )}
         </div>
   
         <table className="min-w-full border-collapse">
@@ -395,8 +432,8 @@ function AdminDashboard() {
                 .filter((key) => !(selectedSection === 'palestrantes' && key === 'user_id'))
                 .filter((key) => !(selectedSection === 'clientes' && key === 'user_id'))
                 .filter((key) => !(selectedSection === 'eventos' && key === 'id_evento'))
-                .filter((key) => !(selectedSection === 'categorias' && key === 'id_categoria'))
-                .filter((key) => !(selectedSection === 'salas' && (key === 'id_sala' || key === 'capacidade')))
+                .filter((key) => !(selectedSection === 'categorias' && key === 'id_categoria' || key === 'visivel'))
+                .filter((key) => !(selectedSection === 'salas' && (key === 'id_sala' || key === 'capacidade' || key === 'visivel')))
                 .filter((key) => !(selectedSection === 'organizadores' && (key === 'id_organizador' || key === 'user_id')))
                 .map((key) => {
                   if (selectedSection === 'palestrantes' && key === 'id_cliente') {
@@ -439,7 +476,10 @@ function AdminDashboard() {
             <li key={section}>
               <button
                 onClick={() => setSelectedSection(section)}
-                className="w-full text-left py-2 px-4 hover:bg-gray-600 rounded transition-all duration-300 ease-in-out">
+                className={`w-full text-left py-2 px-4 rounded transition-all duration-300 ease-in-out ${
+                  selectedSection === section ? 'bg-blue-300 text-white' : 'hover:bg-gray-600'
+                }`}
+              >
                 <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out">
                   {section.charAt(0).toUpperCase() + section.slice(1)}
                 </span>
@@ -448,7 +488,8 @@ function AdminDashboard() {
           ))}
         </ul>
       </div>
-      
+  
+      {/* Conteúdo Principal */}
       <div className="w-3/4 p-6 bg-gray-100">
         {loading && <p>Carregando...</p>}
         {error && <p className="text-red-500">{error}</p>}
@@ -456,5 +497,6 @@ function AdminDashboard() {
       </div>
     </div>
   );
+  
  }
  export default AdminDashboard;

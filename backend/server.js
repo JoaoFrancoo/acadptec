@@ -665,6 +665,39 @@ app.get('/admin/clientes/nivel2', async (req, res) => {
         return res.status(404).json({ message: 'Cliente não encontrado' });
       }
 
+
+      // Verificar se o cliente deve ser adicionado como organizador ou palestrante
+    if (nivel === 2) {
+      // Verificar se já existe na tabela de organizadores
+      const organizadorCheck = await dbQuery(
+        'SELECT id_organizador FROM organizadores WHERE user_id = ?',
+        [clientId]
+      );
+
+      if (organizadorCheck.length === 0) {
+        // Inserir na tabela organizadores
+        await dbQuery('INSERT INTO organizadores (user_id, departamento) VALUES (?, ?)', [
+          clientId,
+          'Departamento padrão', // Podes ajustar o valor padrão conforme necessário
+        ]);
+      }
+    } else if (nivel === 3) {
+      // Verificar se já existe na tabela de palestrantes
+      const palestranteCheck = await dbQuery(
+        'SELECT id_palestrante FROM palestrantes WHERE id_cliente = ?',
+        [clientId]
+      );
+
+      if (palestranteCheck.length === 0) {
+        // Inserir na tabela palestrantes
+        await dbQuery('INSERT INTO palestrantes (id_cliente, biografia) VALUES (?, ?)', [
+          clientId,
+          'Biografia padrão', // Podes ajustar o valor padrão conforme necessário
+        ]);
+      }
+    }
+
+
       res.json({ message: 'Cliente atualizado com sucesso' });
     } catch (err) {
       console.error('Erro ao atualizar cliente:', err);
