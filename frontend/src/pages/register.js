@@ -56,7 +56,7 @@ const Register = () => {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row min-h-screen">
+    <div className="flex flex-col lg:flex-row min-h-screen p-6 lg:p-12">
       {/* Lado Esquerdo */}
       <div className="flex-1 flex flex-col justify-center items-start p-12 bg-gray-100">
         <h1 className="text-4xl font-bold text-blue-600 leading-tight">
